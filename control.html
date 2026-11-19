@@ -3,36 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Control Panel</title>
+    <title>Tournament Control Panel (Supabase Realtime)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Import Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 font-sans pb-28">
     <div class="max-w-6xl mx-auto space-y-6">
         
-        <!-- Header -->
         <header class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4 gap-3">
             <div>
-                <h1 class="text-2xl font-black text-amber-400">PANEL KONTROL TURNAMEN</h1>
-                <p class="text-xs text-slate-400">Kontrol Skor, Jadwal, Animasi, & Fullscreen Overlay</p>
+                <h1 class="text-2xl font-black text-amber-400">PANEL KONTROL TURNAMEN (SUPABASE)</h1>
+                <p class="text-xs text-slate-400">Super Cepat Tanpa Delay (Realtime Database)</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
                 <a href="index.html" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Standard ↗</a>
-                <a href="fullscreen.html" target="_blank" class="bg-purple-600 hover:bg-purple-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Fullscreen 1 Layar ↗</a>
-                <span id="sync-status" class="text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold">Siap</span>
+                <a href="index.html?mode=fullscreen" target="_blank" class="bg-purple-600 hover:bg-purple-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Fullscreen ↗</a>
+                <span id="sync-status" class="text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold">Terhubung</span>
             </div>
         </header>
 
-        <!-- 1. PILIH CABANG & PENGATURAN ANIMASI -->
+        <!-- 1. PILIH CABANG & ANIMASI -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <div class="flex flex-wrap justify-between items-center gap-2">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">1. Cabang Lomba & Pengaturan Animasi</h2>
-                <!-- TOGGLE ANIMASI GOAL -->
                 <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
                     <span class="text-xs text-slate-300 font-bold">Animasi Goal Pop-up:</span>
                     <button id="toggle-goal-anim-btn" onclick="toggleGoalAnimationSetting()" class="px-3 py-1 rounded text-xs font-black transition">AKTIF</button>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button onclick="switchSport('futsal')" id="btn-sport-futsal" class="sport-btn p-3 rounded-xl border-2 border-amber-500 bg-amber-500/10 text-left">
                     <div class="text-lg font-black text-white">⚽ Futsal</div>
@@ -140,16 +139,20 @@
         <!-- FOOTER SIMPAN -->
         <div class="fixed bottom-0 left-0 w-full bg-slate-900/95 backdrop-blur border-t border-slate-800 p-3 z-40">
             <div class="max-w-6xl mx-auto flex justify-between items-center">
-                <button onclick="archiveMatch()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-xl font-bold text-xs">💾 Arsipkan ke Sheet</button>
-                <button onclick="saveChanges()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-2.5 rounded-xl font-black text-sm shadow-lg">🚀 SINKRONKAN KE OBS</button>
+                <button onclick="archiveMatch()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-xl font-bold text-xs">💾 Arsipkan ke Database</button>
+                <button onclick="saveChanges()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-2.5 rounded-xl font-black text-sm shadow-lg">🚀 KIRIM KE OBS INSTAN</button>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbyNy10IBvQN9E27RtM-V-iZn8tpPkDmMPXv7KyY4CzF0xwtvQQ-kggzSGn0F36hQr3fOw/exec";
+        // === KONFIGURASI SUPABASE ANDA ===
+        const SUPABASE_URL = "https://tjueseuepvtlilsabpye.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_jcClReuAmoQJXRGWHK2jDg_Jp7JMEYv";
 
-        let stateData = { sport_type: "futsal", event_name: "PERSAWI III 2026", match_name: "16 Besar - Match 1", home_name: "Tim Garuda", away_name: "Tim Rajawali", home_score: 0, away_score: 0, extra_data: "{}", timer_status: "stopped", timer_seconds: 1200, timer_mode: "down", active_lt_title: "", active_lt_subtitle: "", active_lt_show: 0, goal_trigger: 0, goal_animation_enabled: "1", last_scoring_team: "", stinger_trigger: 0 };
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let stateData = {};
         let extraObj = { home_foul: 0, away_foul: 0, archery_end: 1, home_arrows: [], away_arrows: [] };
         let dbMatches = [];
 
@@ -159,21 +162,24 @@
             cerdas_cermat: { rules: "<strong>Cerdas Cermat:</strong> Tombol poin cepat +100, +50, -50, -10." }
         };
 
-        async function loadDatabase() {
+        async function initLoad() {
             try {
-                let res = await fetch(API_URL + "?action=getAll");
-                let data = await res.json();
-                if (data.Matches) { dbMatches = data.Matches; filterMatchesByRound(); }
-                if (data.State && data.State.sport_type) {
-                    stateData = Object.assign(stateData, data.State);
+                // Ambil data matches
+                let { data: matches } = await supabaseClient.from('matches').select('*');
+                if (matches) { dbMatches = matches; filterMatchesByRound(); }
+
+                // Ambil state utama
+                let { data: state } = await supabaseClient.from('tournament_state').select('*').eq('id', 1).single();
+                if (state) {
+                    stateData = state;
                     try { extraObj = JSON.parse(stateData.extra_data || "{}"); } catch(e){}
                 }
             } catch(e){ console.error(e); }
 
-            document.getElementById('event_name').value = stateData.event_name;
-            document.getElementById('match_name').value = stateData.match_name;
-            document.getElementById('home_name').value = stateData.home_name;
-            document.getElementById('away_name').value = stateData.away_name;
+            document.getElementById('event_name').value = stateData.event_name || '';
+            document.getElementById('match_name').value = stateData.match_name || '';
+            document.getElementById('home_name').value = stateData.home_name || '';
+            document.getElementById('away_name').value = stateData.away_name || '';
             updateGoalAnimButtonUI();
             switchSport(stateData.sport_type || 'futsal');
         }
@@ -187,13 +193,8 @@
         function updateGoalAnimButtonUI() {
             let btn = document.getElementById('toggle-goal-anim-btn');
             let isEnabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1);
-            if (isEnabled) {
-                btn.innerText = "AKTIF (ON)";
-                btn.className = "px-3 py-1 rounded text-xs font-black bg-emerald-600 text-white";
-            } else {
-                btn.innerText = "MATI (OFF)";
-                btn.className = "px-3 py-1 rounded text-xs font-black bg-rose-600 text-white";
-            }
+            btn.innerText = isEnabled ? "AKTIF (ON)" : "MATI (OFF)";
+            btn.className = isEnabled ? "px-3 py-1 rounded text-xs font-black bg-emerald-600 text-white" : "px-3 py-1 rounded text-xs font-black bg-rose-600 text-white";
         }
 
         function switchSport(sport) {
@@ -351,17 +352,32 @@
 
             let b = document.getElementById('sync-status');
             b.innerText = "Menyimpan..."; b.className = "text-xs bg-amber-600 px-3 py-1.5 rounded-full font-bold";
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateState', updates: stateData }) });
-            b.innerText = "Tersinkron ✔"; b.className = "text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold";
+            
+            let { error } = await supabaseClient.from('tournament_state').update(stateData).eq('id', 1);
+            
+            if (!error) {
+                b.innerText = "Tersinkron ✔"; b.className = "text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold";
+            } else {
+                b.innerText = "Gagal"; b.className = "text-xs bg-rose-600 px-3 py-1.5 rounded-full font-bold";
+            }
         }
 
         async function archiveMatch() {
-            if(!confirm("Arsipkan hasil match ini ke Google Sheets?")) return;
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveMatchHistory', record: { sport_type: stateData.sport_type, event_name: stateData.event_name, match_name: stateData.match_name, home_name: stateData.home_name, home_score: stateData.home_score, away_name: stateData.away_name, away_score: stateData.away_score, extra_data: extraObj } }) });
-            alert("Hasil berhasil diarsipkan!");
+            if(!confirm("Arsipkan hasil match ini ke database?")) return;
+            await supabaseClient.from('match_history').insert([{
+                sport_type: stateData.sport_type,
+                event_name: stateData.event_name,
+                match_name: stateData.match_name,
+                home_name: stateData.home_name,
+                home_score: stateData.home_score,
+                away_name: stateData.away_name,
+                away_score: stateData.away_score,
+                detail_json: JSON.stringify(extraObj)
+            }]);
+            alert("Hasil berhasil diarsipkan ke database!");
         }
 
-        loadDatabase();
+        initLoad();
     </script>
 </body>
 </html>
