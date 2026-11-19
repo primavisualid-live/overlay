@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tournament Control Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 font-sans pb-28">
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <!-- Header -->
+        <header class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4 gap-3">
+            <div>
+                <h1 class="text-2xl font-black text-amber-400">PANEL KONTROL TURNAMEN</h1>
+                <p class="text-xs text-slate-400">Kontrol Skor, Jadwal, Animasi, & Fullscreen Overlay</p>
+            </div>
+            <div class="flex items-center gap-2 flex-wrap">
+                <a href="index.html" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Standard ↗</a>
+                <a href="fullscreen.html" target="_blank" class="bg-purple-600 hover:bg-purple-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Fullscreen 1 Layar ↗</a>
+                <span id="sync-status" class="text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold">Siap</span>
+            </div>
+        </header>
+
+        <!-- 1. PILIH CABANG & PENGATURAN ANIMASI -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">1. Cabang Lomba & Pengaturan Animasi</h2>
+                <!-- TOGGLE ANIMASI GOAL -->
+                <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-300 font-bold">Animasi Goal Pop-up:</span>
+                    <button id="toggle-goal-anim-btn" onclick="toggleGoalAnimationSetting()" class="px-3 py-1 rounded text-xs font-black transition">AKTIF</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button onclick="switchSport('futsal')" id="btn-sport-futsal" class="sport-btn p-3 rounded-xl border-2 border-amber-500 bg-amber-500/10 text-left">
+                    <div class="text-lg font-black text-white">⚽ Futsal</div>
+                </button>
+                <button onclick="switchSport('panahan')" id="btn-sport-panahan" class="sport-btn p-3 rounded-xl border-2 border-slate-700 bg-slate-800/50 text-left">
+                    <div class="text-lg font-black text-white">🏹 Panahan</div>
+                </button>
+                <button onclick="switchSport('cerdas_cermat')" id="btn-sport-cerdas_cermat" class="sport-btn p-3 rounded-xl border-2 border-slate-700 bg-slate-800/50 text-left">
+                    <div class="text-lg font-black text-white">🎙️ Cerdas Cermat</div>
+                </button>
+            </div>
+            <div id="rules-box" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300"></div>
+        </section>
+
+        <!-- 2. MANAJEMEN MATCH & BABAK -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400">2. Pilih Jadwal Match & Babak Turnamen</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Pilih Babak (Round)</label>
+                    <select id="select_round" onchange="filterMatchesByRound()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold">
+                        <option value="">-- Semua Babak --</option>
+                        <option value="16 Besar">Babak 16 Besar</option>
+                        <option value="8 Besar">Babak 8 Besar (Perempat Final)</option>
+                        <option value="Semifinal">Babak Semifinal</option>
+                        <option value="Final">Babak Final / Juara 3</option>
+                        <option value="Penyisihan">Babak Penyisihan</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Pilih Jadwal Match</label>
+                    <select id="select_match_item" onchange="loadSelectedMatch(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold">
+                        <option value="">-- Pilih Match / Pertandingan --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Nama Event</label>
+                    <input type="text" id="event_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" value="PERSAWI III 2026">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Keterangan Match / Babak</label>
+                    <input type="text" id="match_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="swapTeams()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs py-2 rounded-lg font-bold">🔄 Tukar Posisi Kiri ⇄ Kanan</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                <div>
+                    <label class="block text-xs font-bold text-amber-400 mb-1">Tim Kiri (Home)</label>
+                    <input type="text" id="home_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-cyan-400 mb-1">Tim Kanan (Away)</label>
+                    <input type="text" id="away_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. PANEL PENILAIAN -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">3. Kontrol Skor & Penilaian Live</h2>
+                <button onclick="resetScores()" class="text-xs bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1 rounded">Reset Skor</button>
+            </div>
+
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <input type="number" id="timer_mins" value="20" class="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-center font-bold text-white text-sm">
+                    <span class="text-xs text-slate-400">Menit</span>
+                    <select id="timer_mode" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
+                        <option value="down">Hitung Mundur</option>
+                        <option value="up">Hitung Maju</option>
+                    </select>
+                    <button onclick="setTimer()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded font-bold">Atur Waktu</button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="controlTimer('running')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-bold text-xs">▶ Mulai</button>
+                    <button onclick="controlTimer('paused')" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-bold text-xs">⏸ Jeda</button>
+                    <button onclick="controlTimer('stopped')" class="bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-lg font-bold text-xs">⏹ Reset</button>
+                </div>
+            </div>
+
+            <div id="scoring-area"></div>
+        </section>
+
+        <!-- 4. LOWER THIRD & STINGER -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-purple-400">4. Lower Third & Transisi</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input type="text" id="lt_title" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama / Judul Utama">
+                <input type="text" id="lt_subtitle" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Sub-judul / Jabatan">
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="toggleLT(true)" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg font-bold text-xs">📺 Tampilkan Lower Third</button>
+                <button onclick="toggleLT(false)" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">Sembunyikan</button>
+                <button onclick="triggerStinger()" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-bold text-xs ml-auto">⚡ Picu Stinger</button>
+            </div>
+        </section>
+
+        <!-- FOOTER SIMPAN -->
+        <div class="fixed bottom-0 left-0 w-full bg-slate-900/95 backdrop-blur border-t border-slate-800 p-3 z-40">
+            <div class="max-w-6xl mx-auto flex justify-between items-center">
+                <button onclick="archiveMatch()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-2 rounded-xl font-bold text-xs">💾 Arsipkan ke Sheet</button>
+                <button onclick="saveChanges()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-8 py-2.5 rounded-xl font-black text-sm shadow-lg">🚀 SINKRONKAN KE OBS</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbzF1u3snAy1wvDnv266U-z7H_frPHB4yVhOhwBZc7lXf1Qwm6g7l5RyTw1vjIY10U70kw/exec";
+
+        let stateData = { sport_type: "futsal", event_name: "PERSAWI III 2026", match_name: "16 Besar - Match 1", home_name: "Tim Garuda", away_name: "Tim Rajawali", home_score: 0, away_score: 0, extra_data: "{}", timer_status: "stopped", timer_seconds: 1200, timer_mode: "down", active_lt_title: "", active_lt_subtitle: "", active_lt_show: 0, goal_trigger: 0, goal_animation_enabled: "1", last_scoring_team: "", stinger_trigger: 0 };
+        let extraObj = { home_foul: 0, away_foul: 0, archery_end: 1, home_arrows: [], away_arrows: [] };
+        let dbMatches = [];
+
+        const SPORT_CFG = {
+            futsal: { rules: "<strong>Futsal:</strong> 2x20 menit. Klik +1 Gol untuk mencetak skor." },
+            panahan: { rules: "<strong>Panahan:</strong> Penilaian per anak panah (X, 10-1, M)." },
+            cerdas_cermat: { rules: "<strong>Cerdas Cermat:</strong> Tombol poin cepat +100, +50, -50, -10." }
+        };
+
+        async function loadDatabase() {
+            try {
+                let res = await fetch(API_URL + "?action=getAll");
+                let data = await res.json();
+                if (data.Matches) { dbMatches = data.Matches; filterMatchesByRound(); }
+                if (data.State && data.State.sport_type) {
+                    stateData = Object.assign(stateData, data.State);
+                    try { extraObj = JSON.parse(stateData.extra_data || "{}"); } catch(e){}
+                }
+            } catch(e){ console.error(e); }
+
+            document.getElementById('event_name').value = stateData.event_name;
+            document.getElementById('match_name').value = stateData.match_name;
+            document.getElementById('home_name').value = stateData.home_name;
+            document.getElementById('away_name').value = stateData.away_name;
+            updateGoalAnimButtonUI();
+            switchSport(stateData.sport_type || 'futsal');
+        }
+
+        function toggleGoalAnimationSetting() {
+            stateData.goal_animation_enabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1) ? "0" : "1";
+            updateGoalAnimButtonUI();
+            saveChanges();
+        }
+
+        function updateGoalAnimButtonUI() {
+            let btn = document.getElementById('toggle-goal-anim-btn');
+            let isEnabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1);
+            if (isEnabled) {
+                btn.innerText = "AKTIF (ON)";
+                btn.className = "px-3 py-1 rounded text-xs font-black bg-emerald-600 text-white";
+            } else {
+                btn.innerText = "MATI (OFF)";
+                btn.className = "px-3 py-1 rounded text-xs font-black bg-rose-600 text-white";
+            }
+        }
+
+        function switchSport(sport) {
+            stateData.sport_type = sport;
+            document.querySelectorAll('.sport-btn').forEach(b => {
+                b.classList.remove('border-amber-500', 'bg-amber-500/10');
+                b.classList.add('border-slate-700', 'bg-slate-800/50');
+            });
+            document.getElementById('btn-sport-' + sport).classList.remove('border-slate-700', 'bg-slate-800/50');
+            document.getElementById('btn-sport-' + sport).classList.add('border-amber-500', 'bg-amber-500/10');
+            document.getElementById('rules-box').innerHTML = SPORT_CFG[sport].rules;
+            filterMatchesByRound();
+            renderPanel(sport);
+        }
+
+        function filterMatchesByRound() {
+            let round = document.getElementById('select_round').value;
+            let matchSel = document.getElementById('select_match_item');
+            matchSel.innerHTML = '<option value="">-- Pilih Match / Pertandingan --</option>';
+            let filtered = dbMatches.filter(m => m.sport_type === stateData.sport_type && (!round || m.round_name === round));
+            filtered.forEach((m, idx) => {
+                matchSel.innerHTML += `<option value="${idx}">${m.match_title} (${m.home_team} vs ${m.away_team})</option>`;
+            });
+        }
+
+        function loadSelectedMatch(idx) {
+            if(idx === "") return;
+            let round = document.getElementById('select_round').value;
+            let filtered = dbMatches.filter(m => m.sport_type === stateData.sport_type && (!round || m.round_name === round));
+            let match = filtered[idx];
+            if(match) {
+                document.getElementById('match_name').value = `${match.round_name} - ${match.match_title}`;
+                document.getElementById('home_name').value = match.home_team;
+                document.getElementById('away_name').value = match.away_team;
+                saveChanges();
+            }
+        }
+
+        function swapTeams() {
+            let h = document.getElementById('home_name').value;
+            let a = document.getElementById('away_name').value;
+            document.getElementById('home_name').value = a;
+            document.getElementById('away_name').value = h;
+            let hs = stateData.home_score;
+            stateData.home_score = stateData.away_score;
+            stateData.away_score = hs;
+            renderPanel(stateData.sport_type);
+            saveChanges();
+        }
+
+        function renderPanel(sport) {
+            let c = document.getElementById('scoring-area');
+            if (sport === 'futsal') {
+                c.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div class="flex justify-between items-center"><span class="font-bold text-amber-400">HOME</span><span class="text-xs text-rose-400">Foul: <strong id="home_foul_val">${extraObj.home_foul}</strong>/5</span></div>
+                            <div class="flex items-center justify-between">
+                                <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score}</span>
+                                <div class="flex flex-col gap-2">
+                                    <button onclick="addGoal('home')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
+                                    <div class="flex gap-1"><button onclick="adjScore('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('home', 1)" class="bg-rose-700 px-2 py-1 rounded text-xs">+Foul</button></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                            <div class="flex justify-between items-center"><span class="font-bold text-cyan-400">AWAY</span><span class="text-xs text-rose-400">Foul: <strong id="away_foul_val">${extraObj.away_foul}</strong>/5</span></div>
+                            <div class="flex items-center justify-between">
+                                <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score}</span>
+                                <div class="flex flex-col gap-2">
+                                    <button onclick="addGoal('away')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
+                                    <div class="flex gap-1"><button onclick="adjScore('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('away', 1)" class="bg-rose-700 px-2 py-1 rounded text-xs">+Foul</button></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+            } else if (sport === 'cerdas_cermat') {
+                c.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                            <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score}</span>
+                            <div class="grid grid-cols-2 gap-1.5"><button onclick="adjScore('home', 100)" class="bg-emerald-600 px-3 py-2 rounded font-bold text-xs">+100</button><button onclick="adjScore('home', 50)" class="bg-emerald-700 px-3 py-2 rounded font-bold text-xs">+50</button><button onclick="adjScore('home', -50)" class="bg-rose-600 px-3 py-2 rounded font-bold text-xs">-50</button><button onclick="adjScore('home', -10)" class="bg-rose-800 px-3 py-2 rounded font-bold text-xs">-10</button></div>
+                        </div>
+                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
+                            <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score}</span>
+                            <div class="grid grid-cols-2 gap-1.5"><button onclick="adjScore('away', 100)" class="bg-emerald-600 px-3 py-2 rounded font-bold text-xs">+100</button><button onclick="adjScore('away', 50)" class="bg-emerald-700 px-3 py-2 rounded font-bold text-xs">+50</button><button onclick="adjScore('away', -50)" class="bg-rose-600 px-3 py-2 rounded font-bold text-xs">-50</button><button onclick="adjScore('away', -10)" class="bg-rose-800 px-3 py-2 rounded font-bold text-xs">-10</button></div>
+                        </div>
+                    </div>`;
+            } else {
+                c.innerHTML = `<div class="p-4 bg-slate-950 rounded text-center text-xs text-slate-400">Panel Panahan aktif. Gunakan input standar.</div>`;
+            }
+        }
+
+        function addGoal(side) {
+            stateData[side + '_score'] = (parseInt(stateData[side + '_score']) || 0) + 1;
+            stateData.goal_trigger = Date.now();
+            stateData.last_scoring_team = document.getElementById(side + '_name').value;
+            document.getElementById(side + '_score_val').innerText = stateData[side + '_score'];
+            saveChanges();
+        }
+
+        function adjScore(side, val) {
+            stateData[side + '_score'] = (parseInt(stateData[side + '_score']) || 0) + val;
+            document.getElementById(side + '_score_val').innerText = stateData[side + '_score'];
+            saveChanges();
+        }
+
+        function addFoul(side, val) {
+            extraObj[side + '_foul'] = Math.max(0, (extraObj[side + '_foul'] || 0) + val);
+            document.getElementById(side + '_foul_val').innerText = extraObj[side + '_foul'];
+            saveChanges();
+        }
+
+        function resetScores() {
+            if(!confirm("Reset skor pertandingan ini?")) return;
+            stateData.home_score = 0;
+            stateData.away_score = 0;
+            extraObj.home_foul = 0;
+            extraObj.away_foul = 0;
+            renderPanel(stateData.sport_type);
+            saveChanges();
+        }
+
+        function setTimer() {
+            let mins = parseInt(document.getElementById('timer_mins').value) || 20;
+            stateData.timer_mode = document.getElementById('timer_mode').value;
+            stateData.timer_seconds = (stateData.timer_mode === 'down') ? mins * 60 : 0;
+            stateData.timer_status = 'stopped';
+            saveChanges();
+        }
+
+        function controlTimer(st) {
+            stateData.timer_status = st;
+            saveChanges();
+        }
+
+        function toggleLT(show) {
+            stateData.active_lt_title = document.getElementById('lt_title').value;
+            stateData.active_lt_subtitle = document.getElementById('lt_subtitle').value;
+            stateData.active_lt_show = show ? 1 : 0;
+            saveChanges();
+        }
+
+        function triggerStinger() {
+            stateData.stinger_trigger = Date.now();
+            saveChanges();
+        }
+
+        async function saveChanges() {
+            stateData.event_name = document.getElementById('event_name').value;
+            stateData.match_name = document.getElementById('match_name').value;
+            stateData.home_name = document.getElementById('home_name').value;
+            stateData.away_name = document.getElementById('away_name').value;
+            stateData.extra_data = JSON.stringify(extraObj);
+
+            let b = document.getElementById('sync-status');
+            b.innerText = "Menyimpan..."; b.className = "text-xs bg-amber-600 px-3 py-1.5 rounded-full font-bold";
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'updateState', updates: stateData }) });
+            b.innerText = "Tersinkron ✔"; b.className = "text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold";
+        }
+
+        async function archiveMatch() {
+            if(!confirm("Arsipkan hasil match ini ke Google Sheets?")) return;
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'saveMatchHistory', record: { sport_type: stateData.sport_type, event_name: stateData.event_name, match_name: stateData.match_name, home_name: stateData.home_name, home_score: stateData.home_score, away_name: stateData.away_name, away_score: stateData.away_score, extra_data: extraObj } }) });
+            alert("Hasil berhasil diarsipkan!");
+        }
+
+        loadDatabase();
+    </script>
+</body>
+</html>
