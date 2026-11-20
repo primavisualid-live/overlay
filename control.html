@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Control Panel (Supabase Realtime)</title>
+    <title>Tournament Control Panel (TV Broadcast Edition)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -13,11 +13,11 @@
         <!-- HEADER -->
         <header class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4 gap-3">
             <div>
-                <h1 class="text-2xl font-black text-amber-400">PANEL KONTROL TURNAMEN (SUPABASE)</h1>
+                <h1 class="text-2xl font-black text-amber-400">PANEL KONTROL TURNAMEN (TV BROADCAST)</h1>
                 <p class="text-xs text-slate-400">Shortcut: [Spasi] Play/Pause Waktu | [1] Gol Home | [2] Gol Away | [G] Stinger</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
-                <a href="index.html" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Standard ↗</a>
+                <a href="index.html" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay TV Standard ↗</a>
                 <a href="index.html?mode=fullscreen" target="_blank" class="bg-purple-600 hover:bg-purple-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Fullscreen ↗</a>
                 <span id="sync-status" class="text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold">Terhubung</span>
             </div>
@@ -26,41 +26,37 @@
         <!-- LIVE MINI-PREVIEW SCOREBOARD -->
         <section class="bg-slate-900/90 p-4 rounded-2xl border border-slate-700 shadow-xl">
             <div class="flex justify-between items-center mb-2">
-                <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Live Mini-Preview OBS</span>
+                <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Live Mini-Preview TV Scorebug</span>
                 <span id="preview_swap_badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">Posisi Normal (Home Kiri)</span>
             </div>
             <div id="mini-preview-container" class="flex items-center justify-center bg-slate-950 p-3 rounded-xl border border-slate-800 overflow-x-auto">
-                <div id="pv_box_left" class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
-                    <div class="flex items-center gap-2.5 px-4 py-2">
-                        <!-- Preview Baju & Celana Kiri -->
-                        <div class="w-4 h-7 rounded overflow-hidden border border-white/40 flex flex-col">
-                            <span id="pv_left_shirt" class="h-4 w-full block" style="background:#f59e0b"></span>
-                            <span id="pv_left_shorts" class="h-3 w-full block border-t border-black/30" style="background:#1e293b"></span>
+                <div class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                    <div class="px-3 py-2 bg-slate-800 border-r border-slate-700 text-center">
+                        <div id="pv_match_name" class="text-[9px] font-bold text-amber-400 uppercase truncate max-w-[90px]">1ST HALF</div>
+                        <div id="pv_timer" class="text-base font-mono font-black text-white">20:00</div>
+                    </div>
+
+                    <div class="flex items-center gap-2 px-3 py-2">
+                        <div class="w-3.5 h-6 rounded overflow-hidden border border-white/40 flex flex-col">
+                            <span id="pv_left_shirt" class="h-3.5 w-full block" style="background:#f59e0b"></span>
+                            <span id="pv_left_shorts" class="h-2.5 w-full block border-t border-black/30" style="background:#1e293b"></span>
                         </div>
-                        <div class="text-right">
+                        <div>
                             <div id="pv_left_name" class="font-black text-sm uppercase">HOME</div>
                             <div id="pv_left_sub" class="text-[10px] font-mono text-slate-400">Foul: 0/5</div>
                         </div>
                     </div>
-                    <div id="pv_left_score" class="px-4 py-2 text-2xl font-black bg-slate-950 text-amber-400">0</div>
-                </div>
-
-                <div class="px-4 py-1.5 mx-2 bg-slate-800 rounded-lg text-center min-w-[110px]">
-                    <div id="pv_match_name" class="text-[10px] font-bold text-slate-300 uppercase truncate max-w-[120px]">LIVE</div>
-                    <div id="pv_timer" class="text-lg font-mono font-black text-white">20:00</div>
-                </div>
-
-                <div id="pv_box_right" class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
-                    <div id="pv_right_score" class="px-4 py-2 text-2xl font-black bg-slate-950 text-cyan-400">0</div>
-                    <div class="flex items-center gap-2.5 px-4 py-2">
-                        <div class="text-left">
+                    <div id="pv_left_score" class="px-3.5 py-2 text-2xl font-black bg-slate-950 text-amber-400">0</div>
+                    <div class="px-1.5 text-slate-600 font-black">-</div>
+                    <div id="pv_right_score" class="px-3.5 py-2 text-2xl font-black bg-slate-950 text-cyan-400">0</div>
+                    <div class="flex items-center gap-2 px-3 py-2">
+                        <div class="text-right">
                             <div id="pv_right_name" class="font-black text-sm uppercase">AWAY</div>
                             <div id="pv_right_sub" class="text-[10px] font-mono text-slate-400">Foul: 0/5</div>
                         </div>
-                        <!-- Preview Baju & Celana Kanan -->
-                        <div class="w-4 h-7 rounded overflow-hidden border border-white/40 flex flex-col">
-                            <span id="pv_right_shirt" class="h-4 w-full block" style="background:#06b6d4"></span>
-                            <span id="pv_right_shorts" class="h-3 w-full block border-t border-black/30" style="background:#ffffff"></span>
+                        <div class="w-3.5 h-6 rounded overflow-hidden border border-white/40 flex flex-col">
+                            <span id="pv_right_shirt" class="h-3.5 w-full block" style="background:#06b6d4"></span>
+                            <span id="pv_right_shorts" class="h-2.5 w-full block border-t border-black/30" style="background:#ffffff"></span>
                         </div>
                     </div>
                 </div>
@@ -105,7 +101,7 @@
                     <div class="space-y-3">
                         <h3 class="text-sm font-black text-amber-400">A. Input Tim Secara Banyak (Bulk)</h3>
                         <p class="text-[11px] text-slate-400">Masukkan 1 nama tim per baris untuk cabang lomba aktif (<strong id="bulk-sport-label" class="text-white uppercase">FUTSAL</strong>):</p>
-                        <textarea id="bulk_teams_input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white font-mono" placeholder="Contoh:&#10;FC Garuda&#10;Elang Putih FC&#10;Rajawali Muda&#10;Bintang Timur"></textarea>
+                        <textarea id="bulk_teams_input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white font-mono" placeholder="Contoh:&#10;SDIT INSAN RABBANI&#10;WAHDAH 04 BURAU&#10;SMPN 1 MALILI"></textarea>
                         <div class="flex justify-between items-center">
                             <span id="team-count-info" class="text-xs text-slate-400">0 tim terdaftar</span>
                             <button onclick="saveBulkTeams()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-black text-xs">💾 Simpan Semua Tim</button>
@@ -127,7 +123,7 @@
                             </div>
                             <div>
                                 <label class="block text-[11px] text-slate-400 mb-1">Keterangan Match</label>
-                                <input type="text" id="new_match_title" placeholder="Misal: Match 1 / Partai A" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white">
+                                <input type="text" id="new_match_title" placeholder="Misal: Match 1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white">
                             </div>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
@@ -170,15 +166,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Nama Event</label>
-                    <input type="text" id="event_name" oninput="updateLivePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" value="PERSAWI III 2026">
+                    <input type="text" id="event_name" oninput="updateLivePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" value="FUTSAL CUP II">
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">Keterangan Match / Babak</label>
+                    <label class="block text-xs text-slate-400 mb-1">Keterangan Babak / Waktu (Misal: BABAK 1 / 16 BESAR)</label>
                     <input type="text" id="match_name" oninput="updateLivePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
                 </div>
                 <div class="flex items-end gap-2">
                     <button onclick="toggleScreenFlip()" id="btn-flip-screen" class="w-full bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 text-xs py-2.5 px-3 rounded-lg font-black shadow">
-                        ⇄ Bolak-Balik Tampilan Layar (Fullscreen/OBS)
+                        ⇄ Bolak-Balik Tampilan Layar (Kiri ⇄ Kanan)
                     </button>
                 </div>
             </div>
@@ -200,34 +196,32 @@
                     <input type="text" id="home_name" oninput="updateLivePreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
                     
                     <div class="grid grid-cols-2 gap-3 pt-1">
-                        <!-- Baju Home -->
                         <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800 space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300">👕 Baju</span>
                                 <input type="color" id="home_color" value="#f59e0b" onchange="updateColorPreview()" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
                             </div>
                             <div class="flex gap-1.5 flex-wrap">
-                                <button onclick="setQuickColor('home_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40" title="Merah"></button>
-                                <button onclick="setQuickColor('home_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40" title="Biru"></button>
-                                <button onclick="setQuickColor('home_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40" title="Hijau"></button>
-                                <button onclick="setQuickColor('home_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40" title="Kuning"></button>
-                                <button onclick="setQuickColor('home_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500" title="Putih"></button>
-                                <button onclick="setQuickColor('home_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40" title="Hitam"></button>
+                                <button onclick="setQuickColor('home_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500"></button>
+                                <button onclick="setQuickColor('home_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40"></button>
                             </div>
                         </div>
-                        <!-- Celana Home -->
                         <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800 space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300">🩳 Celana</span>
                                 <input type="color" id="home_shorts_color" value="#1e293b" onchange="updateColorPreview()" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
                             </div>
                             <div class="flex gap-1.5 flex-wrap">
-                                <button onclick="setQuickColor('home_shorts_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40" title="Merah"></button>
-                                <button onclick="setQuickColor('home_shorts_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40" title="Biru"></button>
-                                <button onclick="setQuickColor('home_shorts_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40" title="Hijau"></button>
-                                <button onclick="setQuickColor('home_shorts_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40" title="Kuning"></button>
-                                <button onclick="setQuickColor('home_shorts_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500" title="Putih"></button>
-                                <button onclick="setQuickColor('home_shorts_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40" title="Hitam"></button>
+                                <button onclick="setQuickColor('home_shorts_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_shorts_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_shorts_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_shorts_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('home_shorts_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500"></button>
+                                <button onclick="setQuickColor('home_shorts_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40"></button>
                             </div>
                         </div>
                     </div>
@@ -248,34 +242,32 @@
                     <input type="text" id="away_name" oninput="updateLivePreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
 
                     <div class="grid grid-cols-2 gap-3 pt-1">
-                        <!-- Baju Away -->
                         <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800 space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300">👕 Baju</span>
                                 <input type="color" id="away_color" value="#06b6d4" onchange="updateColorPreview()" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
                             </div>
                             <div class="flex gap-1.5 flex-wrap">
-                                <button onclick="setQuickColor('away_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40" title="Merah"></button>
-                                <button onclick="setQuickColor('away_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40" title="Biru"></button>
-                                <button onclick="setQuickColor('away_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40" title="Hijau"></button>
-                                <button onclick="setQuickColor('away_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40" title="Kuning"></button>
-                                <button onclick="setQuickColor('away_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500" title="Putih"></button>
-                                <button onclick="setQuickColor('away_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40" title="Hitam"></button>
+                                <button onclick="setQuickColor('away_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500"></button>
+                                <button onclick="setQuickColor('away_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40"></button>
                             </div>
                         </div>
-                        <!-- Celana Away -->
                         <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800 space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <span class="text-[11px] font-bold text-slate-300">🩳 Celana</span>
                                 <input type="color" id="away_shorts_color" value="#ffffff" onchange="updateColorPreview()" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0">
                             </div>
                             <div class="flex gap-1.5 flex-wrap">
-                                <button onclick="setQuickColor('away_shorts_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40" title="Merah"></button>
-                                <button onclick="setQuickColor('away_shorts_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40" title="Biru"></button>
-                                <button onclick="setQuickColor('away_shorts_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40" title="Hijau"></button>
-                                <button onclick="setQuickColor('away_shorts_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40" title="Kuning"></button>
-                                <button onclick="setQuickColor('away_shorts_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500" title="Putih"></button>
-                                <button onclick="setQuickColor('away_shorts_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40" title="Hitam"></button>
+                                <button onclick="setQuickColor('away_shorts_color', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_shorts_color', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_shorts_color', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_shorts_color', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40"></button>
+                                <button onclick="setQuickColor('away_shorts_color', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500"></button>
+                                <button onclick="setQuickColor('away_shorts_color', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40"></button>
                             </div>
                         </div>
                     </div>
@@ -283,14 +275,14 @@
             </div>
         </section>
 
-        <!-- 3. PANEL PENILAIAN -->
+        <!-- 3. PANEL PENILAIAN, TIMER, TIME-OUT & ADU PENALTI -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">3. Kontrol Skor & Penilaian Live</h2>
-                <button onclick="resetScores()" class="text-xs bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1 rounded">Reset Skor</button>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">3. Kontrol Skor, Waktu, Time-Out & Penalti</h2>
+                <button onclick="resetScores()" class="text-xs bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1 rounded">Reset Semua Skor & Statistik</button>
             </div>
 
-            <!-- KONTROL TIMER TERSINKRONISASI -->
+            <!-- KONTROL TIMER PERTANDINGAN -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center gap-2 flex-wrap">
                     <input type="number" id="timer_mins" value="20" class="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-center font-bold text-white text-sm">
@@ -301,11 +293,29 @@
                     </select>
                     <button onclick="setTimer()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded font-bold">Atur Waktu</button>
                 </div>
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 flex-wrap">
                     <span id="control_timer_display" class="text-2xl font-mono font-black text-amber-400 bg-slate-900 px-3 py-1 rounded-lg border border-slate-700">20:00</span>
                     <button onclick="controlTimer('running')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-bold text-xs">▶ Mulai</button>
                     <button onclick="controlTimer('paused')" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-bold text-xs">⏸ Jeda</button>
                     <button onclick="controlTimer('stopped')" class="bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-lg font-bold text-xs">⏹ Reset</button>
+                </div>
+            </div>
+
+            <!-- KONTROL TIME-OUT FUTSAL (DURASI BISA DIATUR BEBAS - OTOMATIS PAUSE WAKTU UTAMA) -->
+            <div id="timeout-control-box" class="bg-slate-950 p-4 rounded-xl border border-amber-500/40 flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-3 flex-wrap">
+                    <span class="text-xs font-black uppercase text-amber-400">⏱️ Time-Out:</span>
+                    <div class="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-slate-700">
+                        <input type="number" id="timeout_duration_input" value="60" min="5" max="600" class="w-14 bg-transparent text-center font-bold text-white text-xs focus:outline-none">
+                        <span class="text-[11px] text-slate-400 pr-1">Detik</span>
+                    </div>
+                    <span id="control_timeout_display" class="text-lg font-mono font-black px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-400">TIDAK AKTIF</span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="startTimeout('home')" class="bg-amber-600 hover:bg-amber-500 text-slate-950 px-3.5 py-2 rounded-lg font-black text-xs">⏱️ Time-Out Home</button>
+                    <button onclick="startTimeout('away')" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 px-3.5 py-2 rounded-lg font-black text-xs">⏱️ Time-Out Away</button>
+                    <button onclick="stopTimeout()" class="bg-rose-700 hover:bg-rose-600 text-white px-3.5 py-2 rounded-lg font-bold text-xs">✕ Selesai</button>
+                    <button onclick="resetTimeoutQuota()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg text-xs" title="Reset jatah T.O untuk babak baru">↺ Reset Jatah T.O</button>
                 </div>
             </div>
 
@@ -341,7 +351,21 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let stateData = {};
-        let extraObj = { home_foul: 0, away_foul: 0, archery_end: 1, home_arrows: [], away_arrows: [] };
+        let extraObj = {
+            home_foul: 0,
+            away_foul: 0,
+            home_to_used: false,
+            away_to_used: false,
+            timeout_active: false,
+            timeout_team: '',
+            timeout_seconds: 60,
+            pen_active: false,
+            home_pens: [],
+            away_pens: [],
+            archery_end: 1,
+            home_arrows: [],
+            away_arrows: []
+        };
         let dbMatches = [];
         let dbTeams = [];
         let filteredMatchesCache = [];
@@ -351,25 +375,86 @@
         let localTimerMode = 'down';
 
         const SPORT_CFG = {
-            futsal: { rules: "<strong>Futsal:</strong> 2x20 menit. Atur warna Baju & Celana tiap tim, dan gunakan tombol Bolak-Balik agar posisi scoreboard sesuai lapangan." },
+            futsal: { rules: "<strong>Futsal TV Mode:</strong> Papan skor pojok kiri atas + bar 5 Foul + Time-Out custom detik (otomatis menghentikan waktu utama) + Adu Penalti jika seri." },
             panahan: { rules: "<strong>Panahan:</strong> Klik nilai anak panah (X, 10-1, M) untuk menghitung otomatis per rambahan (End)." },
             cerdas_cermat: { rules: "<strong>Cerdas Cermat:</strong> Tombol poin cepat +100, +50, -50, -10." }
         };
 
+        function formatMMSS(totalSecs) {
+            let mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
+            let secs = String(totalSecs % 60).padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+
+        // Interval Utama (Timer Pertandingan & Timer Time-Out)
         setInterval(() => {
             if (localTimerStatus === 'running') {
                 if (localTimerMode === 'down' && localTimerSeconds > 0) localTimerSeconds--;
                 else if (localTimerMode === 'up') localTimerSeconds++;
                 updateTimerUI();
             }
+
+            if (extraObj.timeout_active && extraObj.timeout_seconds > 0) {
+                extraObj.timeout_seconds--;
+                updateTimeoutUI();
+                if (extraObj.timeout_seconds === 0) {
+                    extraObj.timeout_active = false;
+                    updateTimeoutUI();
+                    saveChanges();
+                }
+            }
         }, 1000);
 
         function updateTimerUI() {
-            let mins = String(Math.floor(localTimerSeconds / 60)).padStart(2, '0');
-            let secs = String(localTimerSeconds % 60).padStart(2, '0');
-            let formatted = `${mins}:${secs}`;
+            let formatted = formatMMSS(localTimerSeconds);
             document.getElementById('control_timer_display').innerText = formatted;
             document.getElementById('pv_timer').innerText = formatted;
+        }
+
+        function updateTimeoutUI() {
+            let el = document.getElementById('control_timeout_display');
+            if (extraObj.timeout_active) {
+                el.innerText = `${extraObj.timeout_team} • ${formatMMSS(extraObj.timeout_seconds)}`;
+                el.className = "text-lg font-mono font-black px-3 py-1 rounded-lg bg-amber-500 text-slate-950 animate-pulse";
+            } else {
+                el.innerText = "TIDAK AKTIF";
+                el.className = "text-lg font-mono font-black px-3 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-400";
+            }
+        }
+
+        function startTimeout(side) {
+            // Hentikan timer utama pertandingan secara otomatis!
+            localTimerStatus = 'paused';
+            updateTimerUI();
+
+            let customDur = parseInt(document.getElementById('timeout_duration_input').value) || 60;
+            extraObj.timeout_active = true;
+            extraObj.timeout_seconds = Math.max(1, customDur);
+            if (side === 'home') {
+                extraObj.home_to_used = true;
+                extraObj.timeout_team = document.getElementById('home_name').value || 'HOME';
+            } else {
+                extraObj.away_to_used = true;
+                extraObj.timeout_team = document.getElementById('away_name').value || 'AWAY';
+            }
+            updateTimeoutUI();
+            saveChanges();
+        }
+
+        function stopTimeout() {
+            let customDur = parseInt(document.getElementById('timeout_duration_input').value) || 60;
+            extraObj.timeout_active = false;
+            extraObj.timeout_seconds = customDur;
+            updateTimeoutUI();
+            saveChanges();
+        }
+
+        function resetTimeoutQuota() {
+            extraObj.home_to_used = false;
+            extraObj.away_to_used = false;
+            extraObj.timeout_active = false;
+            updateTimeoutUI();
+            saveChanges();
         }
 
         async function initLoad() {
@@ -381,7 +466,7 @@
                     stateData = state;
                     try {
                         let parsed = JSON.parse(stateData.extra_data || "{}");
-                        extraObj = { home_foul: 0, away_foul: 0, archery_end: 1, home_arrows: [], away_arrows: [], ...parsed };
+                        extraObj = { ...extraObj, ...parsed };
                     } catch(e){}
                 }
             } catch(e){ console.error(e); }
@@ -400,6 +485,7 @@
             localTimerMode = stateData.timer_mode || 'down';
             document.getElementById('timer_mode').value = localTimerMode;
             updateTimerUI();
+            updateTimeoutUI();
 
             updateGoalAnimButtonUI();
             switchSport(stateData.sport_type || 'futsal', false);
@@ -512,15 +598,22 @@
             if (idx === "") return;
             let match = filteredMatchesCache[idx];
             if (match) {
-                document.getElementById('match_name').value = `${match.round_name} - ${match.match_title}`;
+                document.getElementById('match_name').value = `${match.round_name} • ${match.match_title}`;
                 document.getElementById('home_name').value = match.home_team;
                 document.getElementById('away_name').value = match.away_team;
                 stateData.home_score = 0;
                 stateData.away_score = 0;
                 extraObj.home_foul = 0;
                 extraObj.away_foul = 0;
+                extraObj.home_to_used = false;
+                extraObj.away_to_used = false;
+                extraObj.timeout_active = false;
+                extraObj.pen_active = false;
+                extraObj.home_pens = [];
+                extraObj.away_pens = [];
                 extraObj.home_arrows = [];
                 extraObj.away_arrows = [];
+                updateTimeoutUI();
                 renderPanel(stateData.sport_type);
                 saveChanges();
             }
@@ -562,7 +655,6 @@
             let aShirt = document.getElementById('away_color').value || '#06b6d4';
             let aShorts = document.getElementById('away_shorts_color').value || '#ffffff';
 
-            // Update badge mini di kartu input tim
             document.getElementById('badge_home_shirt').style.background = hShirt;
             document.getElementById('badge_home_shorts').style.background = hShorts;
             document.getElementById('badge_away_shirt').style.background = aShirt;
@@ -624,6 +716,8 @@
             document.getElementById('btn-sport-' + sport).classList.add('border-amber-500', 'bg-amber-500/10');
             document.getElementById('rules-box').innerHTML = SPORT_CFG[sport].rules;
 
+            document.getElementById('timeout-control-box').style.display = (sport === 'futsal') ? 'flex' : 'none';
+
             populateTeamDropdowns();
             filterMatchesByRound();
             renderPanel(sport);
@@ -631,28 +725,87 @@
             if (autoSave) saveChanges();
         }
 
+        function renderPenaltyDots(arr) {
+            let html = '';
+            const totalSlots = Math.max(5, arr.length);
+            for (let i = 0; i < totalSlots; i++) {
+                if (arr[i] === 'G') {
+                    html += `<span class="w-5 h-5 rounded-full bg-emerald-500 text-slate-950 font-black text-xs inline-flex items-center justify-center">✓</span>`;
+                } else if (arr[i] === 'M') {
+                    html += `<span class="w-5 h-5 rounded-full bg-rose-600 text-white font-black text-xs inline-flex items-center justify-center">✕</span>`;
+                } else {
+                    html += `<span class="w-5 h-5 rounded-full bg-slate-800 border border-slate-600 inline-block"></span>`;
+                }
+            }
+            return html;
+        }
+
         function renderPanel(sport) {
             let c = document.getElementById('scoring-area');
             if (sport === 'futsal') {
+                const hPenScore = (extraObj.home_pens || []).filter(x => x === 'G').length;
+                const aPenScore = (extraObj.away_pens || []).filter(x => x === 'G').length;
+
                 c.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-                            <div class="flex justify-between items-center"><span class="font-bold text-amber-400">HOME</span><span class="text-xs text-rose-400">Foul: <strong id="home_foul_val">${extraObj.home_foul}</strong>/5</span></div>
-                            <div class="flex items-center justify-between">
-                                <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score || 0}</span>
-                                <div class="flex flex-col gap-2">
-                                    <button onclick="addGoal('home')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
-                                    <div class="flex gap-1"><button onclick="adjScore('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('home', 1)" class="bg-rose-700 px-2.5 py-1 rounded text-xs">+Foul</button><button onclick="addFoul('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-Foul</button></div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                                <div class="flex justify-between items-center"><span class="font-bold text-amber-400">HOME</span><span class="text-xs text-rose-400">Foul: <strong id="home_foul_val">${extraObj.home_foul}</strong>/5</span></div>
+                                <div class="flex items-center justify-between">
+                                    <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score || 0}</span>
+                                    <div class="flex flex-col gap-2">
+                                        <button onclick="addGoal('home')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
+                                        <div class="flex gap-1"><button onclick="adjScore('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('home', 1)" class="bg-rose-700 px-2.5 py-1 rounded text-xs">+Foul</button><button onclick="addFoul('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-Foul</button></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                                <div class="flex justify-between items-center"><span class="font-bold text-cyan-400">AWAY</span><span class="text-xs text-rose-400">Foul: <strong id="away_foul_val">${extraObj.away_foul}</strong>/5</span></div>
+                                <div class="flex items-center justify-between">
+                                    <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score || 0}</span>
+                                    <div class="flex flex-col gap-2">
+                                        <button onclick="addGoal('away')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
+                                        <div class="flex gap-1"><button onclick="adjScore('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('away', 1)" class="bg-rose-700 px-2.5 py-1 rounded text-xs">+Foul</button><button onclick="addFoul('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-Foul</button></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
-                            <div class="flex justify-between items-center"><span class="font-bold text-cyan-400">AWAY</span><span class="text-xs text-rose-400">Foul: <strong id="away_foul_val">${extraObj.away_foul}</strong>/5</span></div>
-                            <div class="flex items-center justify-between">
-                                <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score || 0}</span>
-                                <div class="flex flex-col gap-2">
-                                    <button onclick="addGoal('away')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
-                                    <div class="flex gap-1"><button onclick="adjScore('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('away', 1)" class="bg-rose-700 px-2.5 py-1 rounded text-xs">+Foul</button><button onclick="addFoul('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-Foul</button></div>
+
+                        <!-- PANEL ADU PENALTI (SHOOTING PENALTY JIKA SERI) -->
+                        <div class="bg-slate-950 p-4 rounded-xl border border-indigo-500/40 space-y-3">
+                            <div class="flex flex-wrap justify-between items-center gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-black uppercase text-indigo-400">🎯 Adu Penalti (Penalty Shootout):</span>
+                                    <button onclick="togglePenaltyMode()" class="px-3 py-1 rounded text-xs font-black ${extraObj.pen_active ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-300'}">
+                                        ${extraObj.pen_active ? 'TAMPIL DI OBS (AKTIF)' : 'SEMBUNYI (KLIK UNTUK AKTIFKAN)'}
+                                    </button>
+                                </div>
+                                <button onclick="resetPenalties()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300">Reset Penalti</button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+                                <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-bold text-amber-400">Penalti Home (${hPenScore})</span>
+                                        <div class="flex gap-1.5">${renderPenaltyDots(extraObj.home_pens || [])}</div>
+                                    </div>
+                                    <div class="flex gap-1.5">
+                                        <button onclick="addPenalty('home', 'G')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded text-xs font-black">✓ GOL</button>
+                                        <button onclick="addPenalty('home', 'M')" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded text-xs font-black">✕ GAGAL</button>
+                                        <button onclick="undoPenalty('home')" class="bg-slate-800 px-2.5 py-1.5 rounded text-xs">Undo</button>
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900 p-3 rounded-lg border border-slate-800 space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-bold text-cyan-400">Penalti Away (${aPenScore})</span>
+                                        <div class="flex gap-1.5">${renderPenaltyDots(extraObj.away_pens || [])}</div>
+                                    </div>
+                                    <div class="flex gap-1.5">
+                                        <button onclick="addPenalty('away', 'G')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 py-1.5 rounded text-xs font-black">✓ GOL</button>
+                                        <button onclick="addPenalty('away', 'M')" class="flex-1 bg-rose-600 hover:bg-rose-500 py-1.5 rounded text-xs font-black">✕ GAGAL</button>
+                                        <button onclick="undoPenalty('away')" class="bg-slate-800 px-2.5 py-1.5 rounded text-xs">Undo</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -695,6 +848,34 @@
                         </div>
                     </div>`;
             }
+        }
+
+        function togglePenaltyMode() {
+            extraObj.pen_active = !extraObj.pen_active;
+            renderPanel('futsal');
+            saveChanges();
+        }
+
+        function addPenalty(side, res) {
+            extraObj.pen_active = true;
+            extraObj[side + '_pens'] = extraObj[side + '_pens'] || [];
+            extraObj[side + '_pens'].push(res);
+            renderPanel('futsal');
+            saveChanges();
+        }
+
+        function undoPenalty(side) {
+            extraObj[side + '_pens'] = extraObj[side + '_pens'] || [];
+            extraObj[side + '_pens'].pop();
+            renderPanel('futsal');
+            saveChanges();
+        }
+
+        function resetPenalties() {
+            extraObj.home_pens = [];
+            extraObj.away_pens = [];
+            renderPanel('futsal');
+            saveChanges();
         }
 
         function addArrow(side, val) {
@@ -745,14 +926,21 @@
         }
 
         function resetScores() {
-            if (!confirm("Reset skor pertandingan ini?")) return;
+            if (!confirm("Reset semua skor, foul, time-out, dan penalti pertandingan ini?")) return;
             stateData.home_score = 0;
             stateData.away_score = 0;
             extraObj.home_foul = 0;
             extraObj.away_foul = 0;
+            extraObj.home_to_used = false;
+            extraObj.away_to_used = false;
+            extraObj.timeout_active = false;
+            extraObj.pen_active = false;
+            extraObj.home_pens = [];
+            extraObj.away_pens = [];
             extraObj.archery_end = 1;
             extraObj.home_arrows = [];
             extraObj.away_arrows = [];
+            updateTimeoutUI();
             renderPanel(stateData.sport_type);
             saveChanges();
         }
