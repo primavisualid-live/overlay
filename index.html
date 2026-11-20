@@ -8,16 +8,37 @@
     <style>
         body { background: transparent; margin: 0; overflow: hidden; }
         body.mode-fullscreen { background: #020617; }
+        
         .slide-in { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         .slide-out { animation: slideOut 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100px); opacity: 0; } }
+        
         .stinger-active { animation: stingerWipe 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards; }
         @keyframes stingerWipe {
             0% { transform: translateX(-100%); }
             45% { transform: translateX(0%); }
             55% { transform: translateX(0%); }
             100% { transform: translateX(100%); }
+        }
+
+        @keyframes goalSweep {
+            0% { transform: translateX(-120%) skewX(-20deg); }
+            100% { transform: translateX(220%) skewX(-20deg); }
+        }
+        .goal-sweep-bar {
+            animation: goalSweep 0.9s ease-in-out infinite;
+        }
+
+        @keyframes goalTextPop {
+            0% { transform: scale(0.6); opacity: 0; }
+            20% { transform: scale(1.15); opacity: 1; }
+            35% { transform: scale(1); opacity: 1; }
+            85% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0; }
+        }
+        .animate-goal-banner {
+            animation: goalTextPop 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
     </style>
 </head>
@@ -31,36 +52,58 @@
             </div>
             <div class="flex items-center bg-slate-900/95 border-2 border-slate-700 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-md">
                 
-                <!-- TIM KIRI -->
-                <div class="flex items-center bg-slate-900/95 min-w-[250px]">
-                    <!-- Strip Warna Kostum Kiri -->
-                    <div id="obs_left_jersey" class="w-4 self-stretch transition-colors duration-300" style="background-color: #f59e0b;"></div>
-                    <div class="flex flex-col items-end flex-1 px-6 py-2.5">
-                        <span class="font-extrabold text-xl tracking-wider uppercase" id="obs_left_name">HOME</span>
-                        <span id="obs_left_sub" class="text-xs font-mono text-amber-300 mt-0.5">Foul: 0/5</span>
+                <!-- PANEL TIM + SKOR KIRI -->
+                <div id="std_left_wrapper" class="relative flex items-center overflow-hidden">
+                    <!-- Overlay Animasi GOAL Kiri -->
+                    <div id="std_left_goal_fx" class="hidden absolute inset-0 z-20 flex items-center justify-center overflow-hidden shadow-inner">
+                        <div class="goal-sweep-bar absolute inset-y-0 w-24 bg-white/40 blur-sm"></div>
+                        <div class="relative z-10 flex items-center gap-3 px-6">
+                            <span class="text-3xl font-black tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">⚽ GOAL!</span>
+                        </div>
                     </div>
+
+                    <div class="flex items-center bg-slate-900/95 min-w-[250px] self-stretch">
+                        <!-- Strip Warna Baju (Atas 60%) & Celana (Bawah 40%) Kiri -->
+                        <div class="w-4 self-stretch flex flex-col border-r border-white/20">
+                            <div id="obs_left_shirt" class="h-[60%] w-full transition-colors duration-300" style="background-color: #f59e0b;"></div>
+                            <div id="obs_left_shorts" class="h-[40%] w-full border-t border-black/40 transition-colors duration-300" style="background-color: #1e293b;"></div>
+                        </div>
+                        <div class="flex flex-col items-end flex-1 px-6 py-2.5">
+                            <span class="font-extrabold text-xl tracking-wider uppercase" id="obs_left_name">HOME</span>
+                            <span id="obs_left_sub" class="text-xs font-mono text-amber-300 mt-0.5">Foul: 0/5</span>
+                        </div>
+                    </div>
+                    <div class="px-8 py-3 text-5xl font-black text-amber-400 bg-slate-950/90 transition-transform duration-300" id="obs_left_score">0</div>
                 </div>
 
-                <!-- SKOR KIRI -->
-                <div class="px-8 py-3 text-5xl font-black text-amber-400 bg-slate-950/90" id="obs_left_score">0</div>
-
                 <!-- TENGAH: MATCH & TIMER -->
-                <div class="px-6 py-2 bg-slate-800 flex flex-col items-center justify-center min-w-[180px]">
+                <div class="px-6 py-2 bg-slate-800 flex flex-col items-center justify-center min-w-[180px] z-10 border-x border-slate-700 self-stretch">
                     <span class="text-[11px] font-bold text-slate-300 uppercase tracking-widest text-center" id="obs_match_name">LIVE</span>
                     <span class="text-2xl font-mono font-black text-white mt-0.5" id="obs_timer">20:00</span>
                 </div>
 
-                <!-- SKOR KANAN -->
-                <div class="px-8 py-3 text-5xl font-black text-cyan-400 bg-slate-950/90" id="obs_right_score">0</div>
-
-                <!-- TIM KANAN -->
-                <div class="flex items-center bg-slate-900/95 min-w-[250px]">
-                    <div class="flex flex-col items-start flex-1 px-6 py-2.5">
-                        <span class="font-extrabold text-xl tracking-wider uppercase" id="obs_right_name">AWAY</span>
-                        <span id="obs_right_sub" class="text-xs font-mono text-cyan-300 mt-0.5">Foul: 0/5</span>
+                <!-- PANEL SKOR + TIM KANAN -->
+                <div id="std_right_wrapper" class="relative flex items-center overflow-hidden">
+                    <!-- Overlay Animasi GOAL Kanan -->
+                    <div id="std_right_goal_fx" class="hidden absolute inset-0 z-20 flex items-center justify-center overflow-hidden shadow-inner">
+                        <div class="goal-sweep-bar absolute inset-y-0 w-24 bg-white/40 blur-sm"></div>
+                        <div class="relative z-10 flex items-center gap-3 px-6">
+                            <span class="text-3xl font-black tracking-widest uppercase text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">⚽ GOAL!</span>
+                        </div>
                     </div>
-                    <!-- Strip Warna Kostum Kanan -->
-                    <div id="obs_right_jersey" class="w-4 self-stretch transition-colors duration-300" style="background-color: #06b6d4;"></div>
+
+                    <div class="px-8 py-3 text-5xl font-black text-cyan-400 bg-slate-950/90 transition-transform duration-300" id="obs_right_score">0</div>
+                    <div class="flex items-center bg-slate-900/95 min-w-[250px] self-stretch">
+                        <div class="flex flex-col items-start flex-1 px-6 py-2.5">
+                            <span class="font-extrabold text-xl tracking-wider uppercase" id="obs_right_name">AWAY</span>
+                            <span id="obs_right_sub" class="text-xs font-mono text-cyan-300 mt-0.5">Foul: 0/5</span>
+                        </div>
+                        <!-- Strip Warna Baju (Atas 60%) & Celana (Bawah 40%) Kanan -->
+                        <div class="w-4 self-stretch flex flex-col border-l border-white/20">
+                            <div id="obs_right_shirt" class="h-[60%] w-full transition-colors duration-300" style="background-color: #06b6d4;"></div>
+                            <div id="obs_right_shorts" class="h-[40%] w-full border-t border-black/40 transition-colors duration-300" style="background-color: #ffffff;"></div>
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -74,13 +117,31 @@
             <h1 id="fs_match_name" class="text-4xl font-black tracking-tight text-white uppercase">MATCH</h1>
         </div>
         <div class="grid grid-cols-7 items-center justify-center gap-6 my-auto">
+            
             <!-- KARTU KIRI FULLSCREEN -->
-            <div id="fs_left_card" class="col-span-3 bg-slate-900/80 border-2 border-slate-700 rounded-3xl overflow-hidden text-center shadow-2xl backdrop-blur">
-                <div id="fs_left_jersey" class="h-5 w-full transition-colors duration-300" style="background-color: #f59e0b;"></div>
+            <div id="fs_left_card" class="relative col-span-3 bg-slate-900/80 border-2 border-slate-700 rounded-3xl overflow-hidden text-center shadow-2xl backdrop-blur">
+                <!-- Full Animasi GOAL di dalam Kartu Kiri -->
+                <div id="fs_left_goal_fx" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden">
+                    <div class="goal-sweep-bar absolute inset-y-0 w-40 bg-white/35 blur-md"></div>
+                    <div class="relative z-10 text-center space-y-2">
+                        <div class="text-7xl font-black tracking-widest uppercase text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] animate-bounce">GOAL!</div>
+                        <div id="fs_left_goal_team" class="text-2xl font-extrabold uppercase tracking-wider text-white/95 bg-black/40 px-6 py-1.5 rounded-full">TIM</div>
+                    </div>
+                </div>
+
+                <!-- Bar Atas Warna Baju (65%) & Celana (35%) -->
+                <div class="w-full flex h-6">
+                    <div id="fs_left_shirt_bar" class="w-[65%] h-full transition-colors duration-300" style="background-color: #f59e0b;"></div>
+                    <div id="fs_left_shorts_bar" class="w-[35%] h-full border-l border-black/40 transition-colors duration-300" style="background-color: #1e293b;"></div>
+                </div>
+
                 <div class="p-10 space-y-4">
-                    <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-slate-950/80 border border-slate-700 text-xs font-bold uppercase tracking-widest">
-                        <span id="fs_left_dot" class="w-3 h-3 rounded-full inline-block" style="background-color: #f59e0b;"></span>
-                        <span id="fs_left_tag">TIM KIRI</span>
+                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-950/80 border border-slate-700 text-xs font-bold uppercase tracking-widest">
+                        <span class="flex items-center gap-1"><span id="fs_left_shirt_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Baju</span>
+                        <span class="text-slate-600">|</span>
+                        <span class="flex items-center gap-1"><span id="fs_left_shorts_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Celana</span>
+                        <span class="text-slate-600">|</span>
+                        <span id="fs_left_tag" class="text-amber-400">HOME</span>
                     </div>
                     <h2 id="fs_left_name" class="text-4xl font-black text-white uppercase tracking-wide">HOME</h2>
                     <div id="fs_left_score" class="text-9xl font-black text-amber-400">0</div>
@@ -98,18 +159,36 @@
             </div>
 
             <!-- KARTU KANAN FULLSCREEN -->
-            <div id="fs_right_card" class="col-span-3 bg-slate-900/80 border-2 border-slate-700 rounded-3xl overflow-hidden text-center shadow-2xl backdrop-blur">
-                <div id="fs_right_jersey" class="h-5 w-full transition-colors duration-300" style="background-color: #06b6d4;"></div>
+            <div id="fs_right_card" class="relative col-span-3 bg-slate-900/80 border-2 border-slate-700 rounded-3xl overflow-hidden text-center shadow-2xl backdrop-blur">
+                <!-- Full Animasi GOAL di dalam Kartu Kanan -->
+                <div id="fs_right_goal_fx" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden">
+                    <div class="goal-sweep-bar absolute inset-y-0 w-40 bg-white/35 blur-md"></div>
+                    <div class="relative z-10 text-center space-y-2">
+                        <div class="text-7xl font-black tracking-widest uppercase text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] animate-bounce">GOAL!</div>
+                        <div id="fs_right_goal_team" class="text-2xl font-extrabold uppercase tracking-wider text-white/95 bg-black/40 px-6 py-1.5 rounded-full">TIM</div>
+                    </div>
+                </div>
+
+                <!-- Bar Atas Warna Baju (65%) & Celana (35%) -->
+                <div class="w-full flex h-6">
+                    <div id="fs_right_shirt_bar" class="w-[65%] h-full transition-colors duration-300" style="background-color: #06b6d4;"></div>
+                    <div id="fs_right_shorts_bar" class="w-[35%] h-full border-l border-black/40 transition-colors duration-300" style="background-color: #ffffff;"></div>
+                </div>
+
                 <div class="p-10 space-y-4">
-                    <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-slate-950/80 border border-slate-700 text-xs font-bold uppercase tracking-widest">
-                        <span id="fs_right_dot" class="w-3 h-3 rounded-full inline-block" style="background-color: #06b6d4;"></span>
-                        <span id="fs_right_tag">TIM KANAN</span>
+                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-950/80 border border-slate-700 text-xs font-bold uppercase tracking-widest">
+                        <span class="flex items-center gap-1"><span id="fs_right_shirt_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Baju</span>
+                        <span class="text-slate-600">|</span>
+                        <span class="flex items-center gap-1"><span id="fs_right_shorts_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Celana</span>
+                        <span class="text-slate-600">|</span>
+                        <span id="fs_right_tag" class="text-cyan-400">AWAY</span>
                     </div>
                     <h2 id="fs_right_name" class="text-4xl font-black text-white uppercase tracking-wide">AWAY</h2>
                     <div id="fs_right_score" class="text-9xl font-black text-cyan-400">0</div>
                     <div id="fs_right_sub" class="text-lg font-mono text-slate-300">Foul: 0/5</div>
                 </div>
             </div>
+
         </div>
         <div class="flex justify-between items-center border-t border-slate-800 pt-6">
             <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Official Live Broadcast System</span>
@@ -117,14 +196,6 @@
                 ⇄ Bolak-Balik Posisi Home / Away
             </button>
             <span class="text-sm font-bold text-amber-500 animate-pulse">● LIVE STREAMING</span>
-        </div>
-    </div>
-
-    <!-- GOAL POPUP -->
-    <div id="goal-popup" class="fixed inset-0 flex items-center justify-center z-40 pointer-events-none opacity-0 scale-50 transition-all duration-300">
-        <div class="bg-gradient-to-r from-amber-500 via-red-600 to-amber-500 border-4 border-white px-16 py-8 rounded-3xl shadow-2xl text-center">
-            <h1 class="text-7xl font-black text-white tracking-widest uppercase drop-shadow-lg animate-bounce">GOAL!</h1>
-            <p id="goal-team-name" class="text-2xl font-bold text-amber-100 mt-2">TIM</p>
         </div>
     </div>
 
@@ -161,8 +232,9 @@
         let timerSeconds = 1200;
         let timerStatus = 'stopped';
         let timerMode = 'down';
+        let goalTimeoutLeft = null;
+        let goalTimeoutRight = null;
 
-        // Sembunyikan Lower Third secara rapi setelah animasi slide-out selesai
         const ltContainer = document.getElementById('lower-third-container');
         ltContainer.addEventListener('animationend', (e) => {
             if (e.animationName === 'slideOut') {
@@ -186,15 +258,49 @@
             if (fsTimer) fsTimer.innerText = `${mins}:${secs}`;
         }
 
-        function triggerGoalAnimation(teamName) {
-            let popup = document.getElementById('goal-popup');
-            document.getElementById('goal-team-name').innerText = teamName ? "Gol oleh " + teamName : "GOAL!";
-            popup.classList.remove('opacity-0', 'scale-50');
-            popup.classList.add('opacity-100', 'scale-100');
-            setTimeout(() => {
-                popup.classList.remove('opacity-100', 'scale-100');
-                popup.classList.add('opacity-0', 'scale-50');
-            }, 3000);
+        function triggerScoreboardGoalAnimation(scoringTeamName, leftData, rightData) {
+            const isLeft = scoringTeamName && scoringTeamName.trim().toLowerCase() === leftData.name.trim().toLowerCase();
+            const isRight = scoringTeamName && scoringTeamName.trim().toLowerCase() === rightData.name.trim().toLowerCase();
+
+            if (isLeft) {
+                const stdFx = document.getElementById('std_left_goal_fx');
+                const fsFx = document.getElementById('fs_left_goal_fx');
+                document.getElementById('fs_left_goal_team').innerText = leftData.name;
+
+                stdFx.style.backgroundColor = leftData.shirt;
+                fsFx.style.backgroundColor = leftData.shirt;
+
+                stdFx.classList.remove('hidden', 'animate-goal-banner');
+                fsFx.classList.remove('hidden', 'animate-goal-banner');
+                void stdFx.offsetWidth;
+                stdFx.classList.add('animate-goal-banner');
+                fsFx.classList.add('animate-goal-banner');
+
+                clearTimeout(goalTimeoutLeft);
+                goalTimeoutLeft = setTimeout(() => {
+                    stdFx.classList.add('hidden');
+                    fsFx.classList.add('hidden');
+                }, 3500);
+            } else if (isRight) {
+                const stdFx = document.getElementById('std_right_goal_fx');
+                const fsBox = document.getElementById('fs_right_goal_fx');
+                document.getElementById('fs_right_goal_team').innerText = rightData.name;
+
+                stdFx.style.backgroundColor = rightData.shirt;
+                fsBox.style.backgroundColor = rightData.shirt;
+
+                stdFx.classList.remove('hidden', 'animate-goal-banner');
+                fsBox.classList.remove('hidden', 'animate-goal-banner');
+                void stdFx.offsetWidth;
+                stdFx.classList.add('animate-goal-banner');
+                fsBox.classList.add('animate-goal-banner');
+
+                clearTimeout(goalTimeoutRight);
+                goalTimeoutRight = setTimeout(() => {
+                    stdFx.classList.add('hidden');
+                    fsBox.classList.add('hidden');
+                }, 3500);
+            }
         }
 
         async function flipSidesFromFullscreen() {
@@ -229,43 +335,48 @@
                 awaySubText = 'REGU AWAY';
             }
 
-            // Penentuan Posisi Kiri & Kanan (Normal vs Dibalik)
             let isSwapped = Boolean(s.fs_swapped);
             let leftData = isSwapped
-                ? { name: s.away_name || 'AWAY', score: s.away_score || 0, sub: awaySubText, color: s.away_color || '#06b6d4', tag: 'AWAY' }
-                : { name: s.home_name || 'HOME', score: s.home_score || 0, sub: homeSubText, color: s.home_color || '#f59e0b', tag: 'HOME' };
+                ? { name: s.away_name || 'AWAY', score: s.away_score || 0, sub: awaySubText, shirt: s.away_color || '#06b6d4', shorts: s.away_shorts_color || '#ffffff', tag: 'AWAY' }
+                : { name: s.home_name || 'HOME', score: s.home_score || 0, sub: homeSubText, shirt: s.home_color || '#f59e0b', shorts: s.home_shorts_color || '#1e293b', tag: 'HOME' };
 
             let rightData = isSwapped
-                ? { name: s.home_name || 'HOME', score: s.home_score || 0, sub: homeSubText, color: s.home_color || '#f59e0b', tag: 'HOME' }
-                : { name: s.away_name || 'AWAY', score: s.away_score || 0, sub: awaySubText, color: s.away_color || '#06b6d4', tag: 'AWAY' };
+                ? { name: s.home_name || 'HOME', score: s.home_score || 0, sub: homeSubText, shirt: s.home_color || '#f59e0b', shorts: s.home_shorts_color || '#1e293b', tag: 'HOME' }
+                : { name: s.away_name || 'AWAY', score: s.away_score || 0, sub: awaySubText, shirt: s.away_color || '#06b6d4', shorts: s.away_shorts_color || '#ffffff', tag: 'AWAY' };
 
-            // Update Standard Mode
+            // Standard Mode
             document.getElementById('obs_left_name').innerText = leftData.name;
             document.getElementById('obs_left_score').innerText = leftData.score;
             document.getElementById('obs_left_sub').innerText = leftData.sub;
-            document.getElementById('obs_left_jersey').style.backgroundColor = leftData.color;
+            document.getElementById('obs_left_shirt').style.backgroundColor = leftData.shirt;
+            document.getElementById('obs_left_shorts').style.backgroundColor = leftData.shorts;
 
             document.getElementById('obs_right_name').innerText = rightData.name;
             document.getElementById('obs_right_score').innerText = rightData.score;
             document.getElementById('obs_right_sub').innerText = rightData.sub;
-            document.getElementById('obs_right_jersey').style.backgroundColor = rightData.color;
+            document.getElementById('obs_right_shirt').style.backgroundColor = rightData.shirt;
+            document.getElementById('obs_right_shorts').style.backgroundColor = rightData.shorts;
 
-            // Update Fullscreen Mode
+            // Fullscreen Mode
             document.getElementById('fs_left_name').innerText = leftData.name;
             document.getElementById('fs_left_score').innerText = leftData.score;
             document.getElementById('fs_left_sub').innerText = leftData.sub;
             document.getElementById('fs_left_tag').innerText = leftData.tag;
-            document.getElementById('fs_left_jersey').style.backgroundColor = leftData.color;
-            document.getElementById('fs_left_dot').style.backgroundColor = leftData.color;
+            document.getElementById('fs_left_shirt_bar').style.backgroundColor = leftData.shirt;
+            document.getElementById('fs_left_shorts_bar').style.backgroundColor = leftData.shorts;
+            document.getElementById('fs_left_shirt_dot').style.backgroundColor = leftData.shirt;
+            document.getElementById('fs_left_shorts_dot').style.backgroundColor = leftData.shorts;
 
             document.getElementById('fs_right_name').innerText = rightData.name;
             document.getElementById('fs_right_score').innerText = rightData.score;
             document.getElementById('fs_right_sub').innerText = rightData.sub;
             document.getElementById('fs_right_tag').innerText = rightData.tag;
-            document.getElementById('fs_right_jersey').style.backgroundColor = rightData.color;
-            document.getElementById('fs_right_dot').style.backgroundColor = rightData.color;
+            document.getElementById('fs_right_shirt_bar').style.backgroundColor = rightData.shirt;
+            document.getElementById('fs_right_shorts_bar').style.backgroundColor = rightData.shorts;
+            document.getElementById('fs_right_shirt_dot').style.backgroundColor = rightData.shirt;
+            document.getElementById('fs_right_shorts_dot').style.backgroundColor = rightData.shorts;
 
-            // Sinkronisasi Timer
+            // Timer Sync
             timerMode = s.timer_mode || 'down';
             if (s.timer_status !== timerStatus || Math.abs(timerSeconds - parseInt(s.timer_seconds)) > 2) {
                 timerStatus = s.timer_status;
@@ -273,11 +384,11 @@
                 updateTimerDisplay();
             }
 
-            // Trigger Goal
+            // Trigger Goal di Papan Skor Tim Pencetak
             let gTrigger = parseInt(s.goal_trigger) || 0;
             let animEnabled = (s.goal_animation_enabled === "1" || s.goal_animation_enabled === 1);
             if (animEnabled && gTrigger > 0 && lastGoalTrigger !== 0 && gTrigger !== lastGoalTrigger) {
-                triggerGoalAnimation(s.last_scoring_team);
+                triggerScoreboardGoalAnimation(s.last_scoring_team, leftData, rightData);
             }
             lastGoalTrigger = gTrigger;
 
@@ -313,7 +424,6 @@
         }
         fetchInitialState();
 
-        // Realtime Listener dengan Auto-Reconnect Re-fetch
         supabaseClient
             .channel('public:tournament_state')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
