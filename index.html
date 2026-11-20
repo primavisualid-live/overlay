@@ -1,4 +1,50 @@
-<!-- STANDARD MODE (TOP SCOREBOARD) -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>OBS Realtime Broadcast Overlay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: transparent; margin: 0; overflow: hidden; }
+        body.mode-fullscreen { background: #020617; }
+        
+        .slide-in { animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .slide-out { animation: slideOut 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes slideIn { from { transform: translateY(100px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100px); opacity: 0; } }
+        
+        .stinger-active { animation: stingerWipe 1.2s cubic-bezier(0.77, 0, 0.175, 1) forwards; }
+        @keyframes stingerWipe {
+            0% { transform: translateX(-100%); }
+            45% { transform: translateX(0%); }
+            55% { transform: translateX(0%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes goalSweep {
+            0% { transform: translateX(-120%) skewX(-20deg); }
+            100% { transform: translateX(220%) skewX(-20deg); }
+        }
+        .goal-sweep-bar {
+            animation: goalSweep 0.9s ease-in-out infinite;
+        }
+
+        @keyframes goalTextPop {
+            0% { transform: scale(0.6); opacity: 0; }
+            20% { transform: scale(1.15); opacity: 1; }
+            35% { transform: scale(1); opacity: 1; }
+            85% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.9); opacity: 0; }
+        }
+        .animate-goal-banner {
+            animation: goalTextPop 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body id="body-layout" class="w-[1920px] h-[1080px] relative font-sans text-white">
+
+    <!-- STANDARD MODE (TOP SCOREBOARD) -->
     <div id="layout-standard" class="absolute inset-0 pointer-events-none">
         <div class="absolute top-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center pointer-events-auto">
             <div id="obs_event_name" class="bg-slate-950/90 border border-slate-700 px-5 py-1 rounded-t-xl text-xs font-bold tracking-widest uppercase text-amber-400">
@@ -63,3 +109,331 @@
             </div>
         </div>
     </div>
+
+    <!-- FULLSCREEN MODE -->
+    <div id="layout-fullscreen" class="absolute inset-0 flex flex-col justify-between p-16 bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 hidden">
+        <div class="text-center space-y-2">
+            <h3 id="fs_event_name" class="text-xl font-bold tracking-widest text-amber-400 uppercase">EVENT BROADCAST</h3>
+            <h1 id="fs_match_name" class="text-4xl font-black tracking-tight text-white uppercase">MATCH</h1>
+        </div>
+        <div class="grid grid-cols-7 items-center justify-center gap-6 my-auto">
+            
+            <!-- KARTU KIRI FULLSCREEN -->
+            <div id="fs_left_card" class="relative col-span-3 bg-slate-900/80 border-2 border-slate-700 rounded-3xl overflow-hidden text-center shadow-2xl backdrop-blur">
+                <!-- Full Animasi GOAL di dalam Kartu Kiri -->
+                <div id="fs_left_goal_fx" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden">
+                    <div class="goal-sweep-bar absolute inset-y-0 w-40 bg-white/35 blur-md"></div>
+                    <div class="relative z-10 text-center space-y-2">
+                        <div class="text-7xl font-black tracking-widest uppercase text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] animate-bounce">GOAL!</div>
+                        <div id="fs_left_goal_team" class="text-2xl font-extrabold uppercase tracking-wider text-white/95 bg-black/40 px-6 py-1.5 rounded-full">TIM</div>
+                    </div>
+                </div>
+
+                <!-- Bar Atas Warna Baju (65%) & Celana (35%) -->
+                <div class="w-full flex h-6">
+                    <div id="fs_left_shirt_bar" class="w-[65%] h-full transition-colors duration-300" style="background-color: #f59e0b;"></div>
+                    <div id="fs_left_shorts_bar" class="w-[35%] h-full border-l border-black/40 transition-colors duration-300" style="background-color: #1e293b;"></div>
+                </div>
+
+                <div class="p-10 space-y-4">
+                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-950/80 border border-slate-700 text-xs font-bold uppercase tracking-widest">
+                        <span class="flex items-center gap-1"><span id="fs_left_shirt_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Baju</span>
+                        <span class="text-slate-600">|</span>
+                        <span class="flex items-center gap-1"><span id="fs_left_shorts_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Celana</span>
+                        <span class="text-slate-600">|</span>
+                        <span id="fs_left_tag" class="text-amber-400">HOME</span>
+                    </div>
+                    <h2 id="fs_left_name" class="text-4xl font-black text-white uppercase tracking-wide">HOME</h2>
+                    <div id="fs_left_score" class="text-9xl font-black text-amber-400">0</div>
+                    <div id="fs_left_sub" class="text-lg font-mono text-slate-300">Foul: 0/5</div>
+                </div>
+            </div>
+
+            <!-- TENGAH: VS & TIMER -->
+            <div class="col-span-1 flex flex-col items-center justify-center space-y-3">
+                <span class="text-3xl font-black text-slate-500 italic">VS</span>
+                <div class="bg-slate-950 border border-slate-700 px-6 py-4 rounded-2xl text-center shadow-xl">
+                    <span class="text-xs text-slate-400 uppercase block font-bold tracking-widest">Waktu</span>
+                    <span id="fs_timer" class="text-4xl font-mono font-black text-amber-400">20:00</span>
+                </div>
+            </div>
+
+            <!-- KARTU KANAN FULLSCREEN -->
+            <div id="fs_right_card" class="relative col-span-3 bg-slate-900/80 border-2 border-slate-700 rounded-3xl overflow-hidden text-center shadow-2xl backdrop-blur">
+                <!-- Full Animasi GOAL di dalam Kartu Kanan -->
+                <div id="fs_right_goal_fx" class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center overflow-hidden">
+                    <div class="goal-sweep-bar absolute inset-y-0 w-40 bg-white/35 blur-md"></div>
+                    <div class="relative z-10 text-center space-y-2">
+                        <div class="text-7xl font-black tracking-widest uppercase text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] animate-bounce">GOAL!</div>
+                        <div id="fs_right_goal_team" class="text-2xl font-extrabold uppercase tracking-wider text-white/95 bg-black/40 px-6 py-1.5 rounded-full">TIM</div>
+                    </div>
+                </div>
+
+                <!-- Bar Atas Warna Baju (65%) & Celana (35%) -->
+                <div class="w-full flex h-6">
+                    <div id="fs_right_shirt_bar" class="w-[65%] h-full transition-colors duration-300" style="background-color: #06b6d4;"></div>
+                    <div id="fs_right_shorts_bar" class="w-[35%] h-full border-l border-black/40 transition-colors duration-300" style="background-color: #ffffff;"></div>
+                </div>
+
+                <div class="p-10 space-y-4">
+                    <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-slate-950/80 border border-slate-700 text-xs font-bold uppercase tracking-widest">
+                        <span class="flex items-center gap-1"><span id="fs_right_shirt_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Baju</span>
+                        <span class="text-slate-600">|</span>
+                        <span class="flex items-center gap-1"><span id="fs_right_shorts_dot" class="w-3 h-3 rounded-full border border-white/30"></span>Celana</span>
+                        <span class="text-slate-600">|</span>
+                        <span id="fs_right_tag" class="text-cyan-400">AWAY</span>
+                    </div>
+                    <h2 id="fs_right_name" class="text-4xl font-black text-white uppercase tracking-wide">AWAY</h2>
+                    <div id="fs_right_score" class="text-9xl font-black text-cyan-400">0</div>
+                    <div id="fs_right_sub" class="text-lg font-mono text-slate-300">Foul: 0/5</div>
+                </div>
+            </div>
+
+        </div>
+        <div class="flex justify-between items-center border-t border-slate-800 pt-6">
+            <span class="text-sm font-bold text-slate-400 uppercase tracking-widest">Official Live Broadcast System</span>
+            <button onclick="flipSidesFromFullscreen()" class="bg-slate-800/80 hover:bg-slate-700 border border-slate-600 text-slate-200 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                ⇄ Bolak-Balik Posisi Home / Away
+            </button>
+            <span class="text-sm font-bold text-amber-500 animate-pulse">● LIVE STREAMING</span>
+        </div>
+    </div>
+
+    <!-- LOWER THIRD -->
+    <div id="lower-third-container" class="absolute bottom-20 left-14 hidden opacity-0">
+        <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border-l-8 border-amber-400 px-8 py-4 rounded-r-2xl shadow-2xl">
+            <div id="obs_lt_title" class="text-3xl font-black text-white tracking-wide">Nama Peserta</div>
+            <div id="obs_lt_subtitle" class="text-base font-semibold text-amber-300 mt-1">Keterangan</div>
+        </div>
+    </div>
+
+    <!-- STINGER -->
+    <div id="stinger-layer" class="fixed inset-0 bg-gradient-to-r from-amber-500 via-indigo-900 to-slate-950 z-50 transform -translate-x-full flex items-center justify-center pointer-events-none">
+        <div id="stinger-event-title" class="text-6xl font-black tracking-widest uppercase text-white drop-shadow-lg">LIVE BROADCAST</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://tjueseuepvtlilsabpye.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_jcClReuAmoQJXRGWHK2jDg_Jp7JMEYv";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const isFullscreen = urlParams.get('mode') === 'fullscreen';
+
+        if (isFullscreen) {
+            document.getElementById('body-layout').classList.add('mode-fullscreen');
+            document.getElementById('layout-standard').classList.add('hidden');
+            document.getElementById('layout-fullscreen').classList.remove('hidden');
+        }
+
+        let currentState = {};
+        let lastGoalTrigger = 0;
+        let lastStinger = 0;
+        let timerSeconds = 1200;
+        let timerStatus = 'stopped';
+        let timerMode = 'down';
+        let goalTimeoutLeft = null;
+        let goalTimeoutRight = null;
+
+        const ltContainer = document.getElementById('lower-third-container');
+        ltContainer.addEventListener('animationend', (e) => {
+            if (e.animationName === 'slideOut') {
+                ltContainer.classList.add('hidden');
+            }
+        });
+
+        setInterval(() => {
+            if (timerStatus === 'running') {
+                if (timerMode === 'down' && timerSeconds > 0) timerSeconds--;
+                else if (timerMode === 'up') timerSeconds++;
+                updateTimerDisplay();
+            }
+        }, 1000);
+
+        function updateTimerDisplay() {
+            let mins = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+            let secs = String(timerSeconds % 60).padStart(2, '0');
+            document.getElementById('obs_timer').innerText = `${mins}:${secs}`;
+            let fsTimer = document.getElementById('fs_timer');
+            if (fsTimer) fsTimer.innerText = `${mins}:${secs}`;
+        }
+
+        function triggerScoreboardGoalAnimation(scoringTeamName, leftData, rightData) {
+            const isLeft = scoringTeamName && scoringTeamName.trim().toLowerCase() === leftData.name.trim().toLowerCase();
+            const isRight = scoringTeamName && scoringTeamName.trim().toLowerCase() === rightData.name.trim().toLowerCase();
+
+            if (isLeft) {
+                const stdFx = document.getElementById('std_left_goal_fx');
+                const fsFx = document.getElementById('fs_left_goal_fx');
+                document.getElementById('fs_left_goal_team').innerText = leftData.name;
+
+                stdFx.style.backgroundColor = leftData.shirt;
+                fsFx.style.backgroundColor = leftData.shirt;
+
+                stdFx.classList.remove('hidden', 'animate-goal-banner');
+                fsFx.classList.remove('hidden', 'animate-goal-banner');
+                void stdFx.offsetWidth;
+                stdFx.classList.add('animate-goal-banner');
+                fsFx.classList.add('animate-goal-banner');
+
+                clearTimeout(goalTimeoutLeft);
+                goalTimeoutLeft = setTimeout(() => {
+                    stdFx.classList.add('hidden');
+                    fsFx.classList.add('hidden');
+                }, 3500);
+            } else if (isRight) {
+                const stdFx = document.getElementById('std_right_goal_fx');
+                const fsBox = document.getElementById('fs_right_goal_fx');
+                document.getElementById('fs_right_goal_team').innerText = rightData.name;
+
+                stdFx.style.backgroundColor = rightData.shirt;
+                fsBox.style.backgroundColor = rightData.shirt;
+
+                stdFx.classList.remove('hidden', 'animate-goal-banner');
+                fsBox.classList.remove('hidden', 'animate-goal-banner');
+                void stdFx.offsetWidth;
+                stdFx.classList.add('animate-goal-banner');
+                fsBox.classList.add('animate-goal-banner');
+
+                clearTimeout(goalTimeoutRight);
+                goalTimeoutRight = setTimeout(() => {
+                    stdFx.classList.add('hidden');
+                    fsBox.classList.add('hidden');
+                }, 3500);
+            }
+        }
+
+        async function flipSidesFromFullscreen() {
+            let nextVal = !currentState.fs_swapped;
+            await supabaseClient.from('tournament_state').update({ fs_swapped: nextVal }).eq('id', 1);
+        }
+
+        function updateUI(s) {
+            currentState = s;
+            let extra = {};
+            try { extra = JSON.parse(s.extra_data || "{}"); } catch(e) {}
+
+            document.getElementById('obs_event_name').innerText = s.event_name || 'LIVE EVENT';
+            document.getElementById('fs_event_name').innerText = s.event_name || 'LIVE EVENT';
+            document.getElementById('stinger-event-title').innerText = s.event_name || 'LIVE BROADCAST';
+
+            document.getElementById('obs_match_name').innerText = s.match_name || 'LIVE';
+            document.getElementById('fs_match_name').innerText = s.match_name || 'LIVE';
+
+            let sport = s.sport_type || 'futsal';
+            let homeSubText = '';
+            let awaySubText = '';
+
+            if (sport === 'futsal') {
+                homeSubText = `Foul: ${extra.home_foul || 0}/5`;
+                awaySubText = `Foul: ${extra.away_foul || 0}/5`;
+            } else if (sport === 'panahan') {
+                homeSubText = `End ${extra.archery_end || 1}: ${(extra.home_arrows || []).join(' ') || '-'}`;
+                awaySubText = `End ${extra.archery_end || 1}: ${(extra.away_arrows || []).join(' ') || '-'}`;
+            } else {
+                homeSubText = 'REGU HOME';
+                awaySubText = 'REGU AWAY';
+            }
+
+            let isSwapped = Boolean(s.fs_swapped);
+            let leftData = isSwapped
+                ? { name: s.away_name || 'AWAY', score: s.away_score || 0, sub: awaySubText, shirt: s.away_color || '#06b6d4', shorts: s.away_shorts_color || '#ffffff', tag: 'AWAY' }
+                : { name: s.home_name || 'HOME', score: s.home_score || 0, sub: homeSubText, shirt: s.home_color || '#f59e0b', shorts: s.home_shorts_color || '#1e293b', tag: 'HOME' };
+
+            let rightData = isSwapped
+                ? { name: s.home_name || 'HOME', score: s.home_score || 0, sub: homeSubText, shirt: s.home_color || '#f59e0b', shorts: s.home_shorts_color || '#1e293b', tag: 'HOME' }
+                : { name: s.away_name || 'AWAY', score: s.away_score || 0, sub: awaySubText, shirt: s.away_color || '#06b6d4', shorts: s.away_shorts_color || '#ffffff', tag: 'AWAY' };
+
+            // Standard Mode
+            document.getElementById('obs_left_name').innerText = leftData.name;
+            document.getElementById('obs_left_score').innerText = leftData.score;
+            document.getElementById('obs_left_sub').innerText = leftData.sub;
+            document.getElementById('obs_left_shirt').style.backgroundColor = leftData.shirt;
+            document.getElementById('obs_left_shorts').style.backgroundColor = leftData.shorts;
+
+            document.getElementById('obs_right_name').innerText = rightData.name;
+            document.getElementById('obs_right_score').innerText = rightData.score;
+            document.getElementById('obs_right_sub').innerText = rightData.sub;
+            document.getElementById('obs_right_shirt').style.backgroundColor = rightData.shirt;
+            document.getElementById('obs_right_shorts').style.backgroundColor = rightData.shorts;
+
+            // Fullscreen Mode
+            document.getElementById('fs_left_name').innerText = leftData.name;
+            document.getElementById('fs_left_score').innerText = leftData.score;
+            document.getElementById('fs_left_sub').innerText = leftData.sub;
+            document.getElementById('fs_left_tag').innerText = leftData.tag;
+            document.getElementById('fs_left_shirt_bar').style.backgroundColor = leftData.shirt;
+            document.getElementById('fs_left_shorts_bar').style.backgroundColor = leftData.shorts;
+            document.getElementById('fs_left_shirt_dot').style.backgroundColor = leftData.shirt;
+            document.getElementById('fs_left_shorts_dot').style.backgroundColor = leftData.shorts;
+
+            document.getElementById('fs_right_name').innerText = rightData.name;
+            document.getElementById('fs_right_score').innerText = rightData.score;
+            document.getElementById('fs_right_sub').innerText = rightData.sub;
+            document.getElementById('fs_right_tag').innerText = rightData.tag;
+            document.getElementById('fs_right_shirt_bar').style.backgroundColor = rightData.shirt;
+            document.getElementById('fs_right_shorts_bar').style.backgroundColor = rightData.shorts;
+            document.getElementById('fs_right_shirt_dot').style.backgroundColor = rightData.shirt;
+            document.getElementById('fs_right_shorts_dot').style.backgroundColor = rightData.shorts;
+
+            // Timer Sync
+            timerMode = s.timer_mode || 'down';
+            if (s.timer_status !== timerStatus || Math.abs(timerSeconds - parseInt(s.timer_seconds)) > 2) {
+                timerStatus = s.timer_status;
+                timerSeconds = parseInt(s.timer_seconds) || 0;
+                updateTimerDisplay();
+            }
+
+            // Trigger Goal di Papan Skor Tim Pencetak
+            let gTrigger = parseInt(s.goal_trigger) || 0;
+            let animEnabled = (s.goal_animation_enabled === "1" || s.goal_animation_enabled === 1);
+            if (animEnabled && gTrigger > 0 && lastGoalTrigger !== 0 && gTrigger !== lastGoalTrigger) {
+                triggerScoreboardGoalAnimation(s.last_scoring_team, leftData, rightData);
+            }
+            lastGoalTrigger = gTrigger;
+
+            // Lower Third
+            if (!isFullscreen) {
+                if (parseInt(s.active_lt_show) === 1) {
+                    document.getElementById('obs_lt_title').innerText = s.active_lt_title || '';
+                    document.getElementById('obs_lt_subtitle').innerText = s.active_lt_subtitle || '';
+                    ltContainer.classList.remove('hidden', 'slide-out');
+                    ltContainer.classList.add('slide-in');
+                } else if (!ltContainer.classList.contains('hidden')) {
+                    ltContainer.classList.remove('slide-in');
+                    ltContainer.classList.add('slide-out');
+                }
+            }
+
+            // Stinger
+            let stingerVal = parseInt(s.stinger_trigger) || 0;
+            if (stingerVal > 0 && lastStinger !== 0 && stingerVal !== lastStinger) {
+                let stingerEl = document.getElementById('stinger-layer');
+                if (stingerEl) {
+                    stingerEl.classList.remove('stinger-active');
+                    void stingerEl.offsetWidth;
+                    stingerEl.classList.add('stinger-active');
+                }
+            }
+            lastStinger = stingerVal;
+        }
+
+        async function fetchInitialState() {
+            let { data } = await supabaseClient.from('tournament_state').select('*').eq('id', 1).single();
+            if (data) updateUI(data);
+        }
+        fetchInitialState();
+
+        supabaseClient
+            .channel('public:tournament_state')
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
+                updateUI(payload.new);
+            })
+            .subscribe((status) => {
+                if (status === 'SUBSCRIBED') {
+                    fetchInitialState();
+                }
+            });
+    </script>
+</body>
+</html>
