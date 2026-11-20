@@ -5,16 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tournament Control Panel (Supabase Realtime)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Import Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 font-sans pb-28">
     <div class="max-w-6xl mx-auto space-y-6">
         
+        <!-- HEADER -->
         <header class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-4 gap-3">
             <div>
                 <h1 class="text-2xl font-black text-amber-400">PANEL KONTROL TURNAMEN (SUPABASE)</h1>
-                <p class="text-xs text-slate-400">Super Cepat Tanpa Delay (Realtime Database)</p>
+                <p class="text-xs text-slate-400">Shortcut: [Spasi] Play/Pause Waktu | [1] Gol Home | [2] Gol Away | [G] Stinger</p>
             </div>
             <div class="flex items-center gap-2 flex-wrap">
                 <a href="index.html" target="_blank" class="bg-indigo-600 hover:bg-indigo-500 text-xs px-3 py-2 rounded-lg font-bold">Overlay Standard ↗</a>
@@ -22,6 +22,42 @@
                 <span id="sync-status" class="text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold">Terhubung</span>
             </div>
         </header>
+
+        <!-- LIVE MINI-PREVIEW SCOREBOARD -->
+        <section class="bg-slate-900/90 p-4 rounded-2xl border border-slate-700 shadow-xl">
+            <div class="flex justify-between items-center mb-2">
+                <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400">Live Mini-Preview OBS</span>
+                <span id="preview_swap_badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">Posisi Normal (Home Kiri)</span>
+            </div>
+            <div id="mini-preview-container" class="flex items-center justify-center bg-slate-950 p-3 rounded-xl border border-slate-800 overflow-x-auto">
+                <div id="pv_box_left" class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                    <div class="flex items-center gap-2.5 px-4 py-2">
+                        <span id="pv_left_jersey" class="w-4 h-6 rounded border border-white/40 inline-block" style="background:#f59e0b"></span>
+                        <div class="text-right">
+                            <div id="pv_left_name" class="font-black text-sm uppercase">HOME</div>
+                            <div id="pv_left_sub" class="text-[10px] font-mono text-slate-400">Foul: 0/5</div>
+                        </div>
+                    </div>
+                    <div id="pv_left_score" class="px-4 py-2 text-2xl font-black bg-slate-950 text-amber-400">0</div>
+                </div>
+
+                <div class="px-4 py-1.5 mx-2 bg-slate-800 rounded-lg text-center min-w-[110px]">
+                    <div id="pv_match_name" class="text-[10px] font-bold text-slate-300 uppercase truncate max-w-[120px]">LIVE</div>
+                    <div id="pv_timer" class="text-lg font-mono font-black text-white">20:00</div>
+                </div>
+
+                <div id="pv_box_right" class="flex items-center bg-slate-900 border border-slate-700 rounded-xl overflow-hidden">
+                    <div id="pv_right_score" class="px-4 py-2 text-2xl font-black bg-slate-950 text-cyan-400">0</div>
+                    <div class="flex items-center gap-2.5 px-4 py-2">
+                        <div class="text-left">
+                            <div id="pv_right_name" class="font-black text-sm uppercase">AWAY</div>
+                            <div id="pv_right_sub" class="text-[10px] font-mono text-slate-400">Foul: 0/5</div>
+                        </div>
+                        <span id="pv_right_jersey" class="w-4 h-6 rounded border border-white/40 inline-block" style="background:#06b6d4"></span>
+                    </div>
+                </div>
+            </div>
+        </section>
 
         <!-- 1. PILIH CABANG & ANIMASI -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
@@ -46,51 +82,135 @@
             <div id="rules-box" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300"></div>
         </section>
 
-        <!-- 2. MANAJEMEN MATCH & BABAK -->
+        <!-- 2. MANAJEMEN TIM MASSAL & JADWAL MATCH -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-            <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400">2. Pilih Jadwal Match & Babak Turnamen</h2>
+            <div class="flex flex-wrap justify-between items-center gap-2">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400">2. Manajemen Tim, Jadwal & Posisi Lapangan</h2>
+                <button onclick="toggleSetupModal()" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 px-3 py-1.5 rounded-lg font-black text-xs">
+                    ➕ Input Tim Massal & Buat Jadwal
+                </button>
+            </div>
+
+            <!-- MODAL / PANEL COLLAPSIBLE INPUT TIM & JADWAL -->
+            <div id="setup-drawer" class="hidden bg-slate-950 p-4 rounded-xl border border-cyan-800/60 space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Kolom Kiri: Input Tim Massal -->
+                    <div class="space-y-3">
+                        <h3 class="text-sm font-black text-amber-400">A. Input Tim Secara Banyak (Bulk)</h3>
+                        <p class="text-[11px] text-slate-400">Masukkan 1 nama tim per baris untuk cabang lomba aktif (<strong id="bulk-sport-label" class="text-white uppercase">FUTSAL</strong>):</p>
+                        <textarea id="bulk_teams_input" rows="5" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white font-mono" placeholder="Contoh:&#10;FC Garuda&#10;Elang Putih FC&#10;Rajawali Muda&#10;Bintang Timur"></textarea>
+                        <div class="flex justify-between items-center">
+                            <span id="team-count-info" class="text-xs text-slate-400">0 tim terdaftar</span>
+                            <button onclick="saveBulkTeams()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-black text-xs">💾 Simpan Semua Tim</button>
+                        </div>
+                    </div>
+
+                    <!-- Kolom Kanan: Input Jadwal Pertandingan -->
+                    <div class="space-y-3 border-t md:border-t-0 md:border-l border-slate-800 pt-4 md:pt-0 md:pl-6">
+                        <h3 class="text-sm font-black text-cyan-400">B. Buat Jadwal Pertandingan (Match)</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">Babak</label>
+                                <select id="new_match_round" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white font-bold">
+                                    <option value="Penyisihan">Penyisihan</option>
+                                    <option value="16 Besar">16 Besar</option>
+                                    <option value="8 Besar">8 Besar</option>
+                                    <option value="Semifinal">Semifinal</option>
+                                    <option value="Final">Final / Juara 3</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-400 mb-1">Keterangan Match</label>
+                                <input type="text" id="new_match_title" placeholder="Misal: Match 1 / Partai A" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[11px] text-amber-400 font-bold mb-1">Pilih Tim Home</label>
+                                <select id="new_match_home" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white font-bold"></select>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-cyan-400 font-bold mb-1">Pilih Tim Away</label>
+                                <select id="new_match_away" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-xs text-white font-bold"></select>
+                            </div>
+                        </div>
+                        <button onclick="createNewMatch()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-slate-950 py-2 rounded-lg font-black text-xs">➕ Tambahkan ke Jadwal Match</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PILIH JADWAL MATCH YANG SUDAH ADA -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">Pilih Babak (Round)</label>
+                    <label class="block text-xs text-slate-400 mb-1">Filter Babak (Round)</label>
                     <select id="select_round" onchange="filterMatchesByRound()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold">
                         <option value="">-- Semua Babak --</option>
+                        <option value="Penyisihan">Babak Penyisihan</option>
                         <option value="16 Besar">Babak 16 Besar</option>
                         <option value="8 Besar">Babak 8 Besar (Perempat Final)</option>
                         <option value="Semifinal">Babak Semifinal</option>
                         <option value="Final">Babak Final / Juara 3</option>
-                        <option value="Penyisihan">Babak Penyisihan</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs text-slate-400 mb-1">Pilih Jadwal Match</label>
-                    <select id="select_match_item" onchange="loadSelectedMatch(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white font-bold">
+                    <label class="block text-xs text-slate-400 mb-1">Pilih Jadwal Match untuk Mulai Scoring</label>
+                    <select id="select_match_item" onchange="loadSelectedMatch(this.value)" class="w-full bg-slate-950 border border-amber-500/60 rounded-lg px-3 py-2 text-sm text-white font-bold">
                         <option value="">-- Pilih Match / Pertandingan --</option>
                     </select>
                 </div>
             </div>
 
+            <!-- INFO MATCH & TOMBOL BOLAK-BALIK TAMPILAN -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2">
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Nama Event</label>
-                    <input type="text" id="event_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" value="PERSAWI III 2026">
+                    <input type="text" id="event_name" oninput="updateLivePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" value="PERSAWI III 2026">
                 </div>
                 <div>
                     <label class="block text-xs text-slate-400 mb-1">Keterangan Match / Babak</label>
-                    <input type="text" id="match_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                    <input type="text" id="match_name" oninput="updateLivePreview()" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
                 </div>
-                <div class="flex items-end">
-                    <button onclick="swapTeams()" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs py-2 rounded-lg font-bold">🔄 Tukar Posisi Kiri ⇄ Kanan</button>
+                <div class="flex items-end gap-2">
+                    <button onclick="toggleScreenFlip()" id="btn-flip-screen" class="w-full bg-indigo-600 hover:bg-indigo-500 border border-indigo-400 text-xs py-2.5 px-3 rounded-lg font-black shadow">
+                        ⇄ Bolak-Balik Tampilan Layar (Fullscreen/OBS)
+                    </button>
                 </div>
             </div>
 
+            <!-- NAMA TIM & WARNA KOSTUM (JERSEY) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-                <div>
-                    <label class="block text-xs font-bold text-amber-400 mb-1">Tim Kiri (Home)</label>
-                    <input type="text" id="home_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-amber-400">Tim Home</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-400">Warna Kostum:</span>
+                            <input type="color" id="home_color" value="#f59e0b" onchange="updateColorPreview()" class="w-7 h-7 rounded cursor-pointer bg-transparent border-0">
+                            <button onclick="setQuickColor('home', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40" title="Merah"></button>
+                            <button onclick="setQuickColor('home', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40" title="Biru"></button>
+                            <button onclick="setQuickColor('home', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40" title="Hijau"></button>
+                            <button onclick="setQuickColor('home', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40" title="Kuning"></button>
+                            <button onclick="setQuickColor('home', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500" title="Putih"></button>
+                            <button onclick="setQuickColor('home', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40" title="Hitam"></button>
+                        </div>
+                    </div>
+                    <input type="text" id="home_name" oninput="updateLivePreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-cyan-400 mb-1">Tim Kanan (Away)</label>
-                    <input type="text" id="away_name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
+
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-bold text-cyan-400">Tim Away</label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-400">Warna Kostum:</span>
+                            <input type="color" id="away_color" value="#06b6d4" onchange="updateColorPreview()" class="w-7 h-7 rounded cursor-pointer bg-transparent border-0">
+                            <button onclick="setQuickColor('away', '#ef4444')" class="w-4 h-4 rounded-full bg-red-500 border border-white/40" title="Merah"></button>
+                            <button onclick="setQuickColor('away', '#3b82f6')" class="w-4 h-4 rounded-full bg-blue-500 border border-white/40" title="Biru"></button>
+                            <button onclick="setQuickColor('away', '#10b981')" class="w-4 h-4 rounded-full bg-emerald-500 border border-white/40" title="Hijau"></button>
+                            <button onclick="setQuickColor('away', '#eab308')" class="w-4 h-4 rounded-full bg-yellow-500 border border-white/40" title="Kuning"></button>
+                            <button onclick="setQuickColor('away', '#ffffff')" class="w-4 h-4 rounded-full bg-white border border-slate-500" title="Putih"></button>
+                            <button onclick="setQuickColor('away', '#1e293b')" class="w-4 h-4 rounded-full bg-slate-800 border border-white/40" title="Hitam"></button>
+                        </div>
+                    </div>
+                    <input type="text" id="away_name" oninput="updateLivePreview()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
                 </div>
             </div>
         </section>
@@ -102,8 +222,9 @@
                 <button onclick="resetScores()" class="text-xs bg-rose-950 text-rose-300 border border-rose-800 px-3 py-1 rounded">Reset Skor</button>
             </div>
 
+            <!-- KONTROL TIMER TERSINKRONISASI -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                     <input type="number" id="timer_mins" value="20" class="w-16 bg-slate-900 border border-slate-700 rounded px-2 py-1 text-center font-bold text-white text-sm">
                     <span class="text-xs text-slate-400">Menit</span>
                     <select id="timer_mode" class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white">
@@ -112,7 +233,8 @@
                     </select>
                     <button onclick="setTimer()" class="bg-slate-800 hover:bg-slate-700 text-xs px-3 py-1.5 rounded font-bold">Atur Waktu</button>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <span id="control_timer_display" class="text-2xl font-mono font-black text-amber-400 bg-slate-900 px-3 py-1 rounded-lg border border-slate-700">20:00</span>
                     <button onclick="controlTimer('running')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-bold text-xs">▶ Mulai</button>
                     <button onclick="controlTimer('paused')" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-bold text-xs">⏸ Jeda</button>
                     <button onclick="controlTimer('stopped')" class="bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-lg font-bold text-xs">⏹ Reset</button>
@@ -146,42 +268,255 @@
     </div>
 
     <script>
-        // === KONFIGURASI SUPABASE ANDA ===
         const SUPABASE_URL = "https://tjueseuepvtlilsabpye.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_jcClReuAmoQJXRGWHK2jDg_Jp7JMEYv";
-
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let stateData = {};
         let extraObj = { home_foul: 0, away_foul: 0, archery_end: 1, home_arrows: [], away_arrows: [] };
         let dbMatches = [];
+        let dbTeams = [];
+        let filteredMatchesCache = [];
+
+        // Local Timer Sync
+        let localTimerSeconds = 1200;
+        let localTimerStatus = 'stopped';
+        let localTimerMode = 'down';
 
         const SPORT_CFG = {
-            futsal: { rules: "<strong>Futsal:</strong> 2x20 menit. Klik +1 Gol untuk mencetak skor." },
-            panahan: { rules: "<strong>Panahan:</strong> Penilaian per anak panah (X, 10-1, M)." },
+            futsal: { rules: "<strong>Futsal:</strong> 2x20 menit. Gunakan Color Picker untuk warna kostum tim & tombol Bolak-Balik agar posisi scoreboard sesuai lapangan." },
+            panahan: { rules: "<strong>Panahan:</strong> Klik nilai anak panah (X, 10-1, M) untuk menghitung otomatis per rambahan (End)." },
             cerdas_cermat: { rules: "<strong>Cerdas Cermat:</strong> Tombol poin cepat +100, +50, -50, -10." }
         };
 
+        // Interval Timer di Control Panel agar saat Jeda detik tersimpan akurat
+        setInterval(() => {
+            if (localTimerStatus === 'running') {
+                if (localTimerMode === 'down' && localTimerSeconds > 0) localTimerSeconds--;
+                else if (localTimerMode === 'up') localTimerSeconds++;
+                updateTimerUI();
+            }
+        }, 1000);
+
+        function updateTimerUI() {
+            let mins = String(Math.floor(localTimerSeconds / 60)).padStart(2, '0');
+            let secs = String(localTimerSeconds % 60).padStart(2, '0');
+            let formatted = `${mins}:${secs}`;
+            document.getElementById('control_timer_display').innerText = formatted;
+            document.getElementById('pv_timer').innerText = formatted;
+        }
+
         async function initLoad() {
             try {
-                // Ambil data matches
-                let { data: matches } = await supabaseClient.from('matches').select('*');
-                if (matches) { dbMatches = matches; filterMatchesByRound(); }
+                await Promise.all([fetchTeams(), fetchMatches()]);
 
-                // Ambil state utama
                 let { data: state } = await supabaseClient.from('tournament_state').select('*').eq('id', 1).single();
                 if (state) {
                     stateData = state;
-                    try { extraObj = JSON.parse(stateData.extra_data || "{}"); } catch(e){}
+                    try {
+                        let parsed = JSON.parse(stateData.extra_data || "{}");
+                        extraObj = { home_foul: 0, away_foul: 0, archery_end: 1, home_arrows: [], away_arrows: [], ...parsed };
+                    } catch(e){}
                 }
             } catch(e){ console.error(e); }
 
             document.getElementById('event_name').value = stateData.event_name || '';
             document.getElementById('match_name').value = stateData.match_name || '';
-            document.getElementById('home_name').value = stateData.home_name || '';
-            document.getElementById('away_name').value = stateData.away_name || '';
+            document.getElementById('home_name').value = stateData.home_name || 'HOME';
+            document.getElementById('away_name').value = stateData.away_name || 'AWAY';
+            document.getElementById('home_color').value = stateData.home_color || '#f59e0b';
+            document.getElementById('away_color').value = stateData.away_color || '#06b6d4';
+
+            localTimerSeconds = parseInt(stateData.timer_seconds) || 1200;
+            localTimerStatus = stateData.timer_status || 'stopped';
+            localTimerMode = stateData.timer_mode || 'down';
+            document.getElementById('timer_mode').value = localTimerMode;
+            updateTimerUI();
+
             updateGoalAnimButtonUI();
-            switchSport(stateData.sport_type || 'futsal');
+            switchSport(stateData.sport_type || 'futsal', false);
+            updateLivePreview();
+        }
+
+        async function fetchTeams() {
+            let { data } = await supabaseClient.from('teams').select('*').order('team_name', { ascending: true });
+            if (data) {
+                dbTeams = data;
+                populateTeamDropdowns();
+            }
+        }
+
+        async function fetchMatches() {
+            let { data } = await supabaseClient.from('matches').select('*').order('id', { ascending: true });
+            if (data) {
+                dbMatches = data;
+                filterMatchesByRound();
+            }
+        }
+
+        function toggleSetupModal() {
+            document.getElementById('setup-drawer').classList.toggle('hidden');
+        }
+
+        function populateTeamDropdowns() {
+            let sport = stateData.sport_type || 'futsal';
+            let sportTeams = dbTeams.filter(t => t.sport_type === sport);
+            document.getElementById('bulk-sport-label').innerText = sport;
+            document.getElementById('team-count-info').innerText = `${sportTeams.length} tim terdaftar di cabang ini`;
+
+            let homeSel = document.getElementById('new_match_home');
+            let awaySel = document.getElementById('new_match_away');
+            homeSel.innerHTML = '<option value="">-- Pilih Tim Home --</option>';
+            awaySel.innerHTML = '<option value="">-- Pilih Tim Away --</option>';
+
+            sportTeams.forEach(t => {
+                let opt1 = document.createElement('option');
+                opt1.value = t.team_name;
+                opt1.textContent = t.team_name;
+                homeSel.appendChild(opt1);
+
+                let opt2 = document.createElement('option');
+                opt2.value = t.team_name;
+                opt2.textContent = t.team_name;
+                awaySel.appendChild(opt2);
+            });
+        }
+
+        async function saveBulkTeams() {
+            let raw = document.getElementById('bulk_teams_input').value;
+            let lines = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+            if (lines.length === 0) return alert("Masukkan minimal 1 nama tim!");
+
+            let sport = stateData.sport_type || 'futsal';
+            let payload = lines.map(name => ({ sport_type: sport, team_name: name }));
+
+            let { error } = await supabaseClient.from('teams').insert(payload);
+            if (!error) {
+                document.getElementById('bulk_teams_input').value = '';
+                await fetchTeams();
+                alert(`${lines.length} tim berhasil ditambahkan!`);
+            } else {
+                alert("Gagal menyimpan tim: " + error.message);
+            }
+        }
+
+        async function createNewMatch() {
+            let round = document.getElementById('new_match_round').value;
+            let title = document.getElementById('new_match_title').value.trim() || 'Match';
+            let home = document.getElementById('new_match_home').value;
+            let away = document.getElementById('new_match_away').value;
+
+            if (!home || !away) return alert("Pilih Tim Home dan Tim Away terlebih dahulu!");
+            if (home === away) return alert("Tim Home dan Away tidak boleh sama!");
+
+            let { error } = await supabaseClient.from('matches').insert([{
+                sport_type: stateData.sport_type || 'futsal',
+                round_name: round,
+                match_title: title,
+                home_team: home,
+                away_team: away
+            }]);
+
+            if (!error) {
+                document.getElementById('new_match_title').value = '';
+                await fetchMatches();
+                alert(`Jadwal "${home} vs ${away}" berhasil ditambahkan!`);
+            } else {
+                alert("Gagal membuat jadwal: " + error.message);
+            }
+        }
+
+        function filterMatchesByRound() {
+            let round = document.getElementById('select_round').value;
+            let matchSel = document.getElementById('select_match_item');
+            matchSel.innerHTML = '<option value="">-- Pilih Match / Pertandingan --</option>';
+
+            filteredMatchesCache = dbMatches.filter(m => m.sport_type === stateData.sport_type && (!round || m.round_name === round));
+            filteredMatchesCache.forEach((m, idx) => {
+                let opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `[${m.round_name}] ${m.match_title}: ${m.home_team} vs ${m.away_team}`;
+                matchSel.appendChild(opt);
+            });
+        }
+
+        function loadSelectedMatch(idx) {
+            if (idx === "") return;
+            let match = filteredMatchesCache[idx];
+            if (match) {
+                document.getElementById('match_name').value = `${match.round_name} - ${match.match_title}`;
+                document.getElementById('home_name').value = match.home_team;
+                document.getElementById('away_name').value = match.away_team;
+                stateData.home_score = 0;
+                stateData.away_score = 0;
+                extraObj.home_foul = 0;
+                extraObj.away_foul = 0;
+                extraObj.home_arrows = [];
+                extraObj.away_arrows = [];
+                renderPanel(stateData.sport_type);
+                saveChanges();
+            }
+        }
+
+        // Bolak-balik tampilan posisi layar (Home Kiri <-> Home Kanan)
+        function toggleScreenFlip() {
+            stateData.fs_swapped = !stateData.fs_swapped;
+            updateLivePreview();
+            saveChanges();
+        }
+
+        function setQuickColor(side, hex) {
+            document.getElementById(side + '_color').value = hex;
+            updateColorPreview();
+        }
+
+        function updateColorPreview() {
+            stateData.home_color = document.getElementById('home_color').value;
+            stateData.away_color = document.getElementById('away_color').value;
+            updateLivePreview();
+            saveChanges();
+        }
+
+        function updateLivePreview() {
+            let isSwapped = Boolean(stateData.fs_swapped);
+            let badge = document.getElementById('preview_swap_badge');
+            badge.innerText = isSwapped ? "⇄ Posisi Dibalik (Away Kiri | Home Kanan)" : "Posisi Normal (Home Kiri | Away Kanan)";
+            badge.className = isSwapped ? "text-[11px] font-bold px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40" : "text-[11px] font-bold px-2.5 py-0.5 rounded bg-slate-800 text-slate-300";
+
+            let hName = document.getElementById('home_name').value || 'HOME';
+            let aName = document.getElementById('away_name').value || 'AWAY';
+            let hScore = stateData.home_score || 0;
+            let aScore = stateData.away_score || 0;
+            let hColor = document.getElementById('home_color').value || '#f59e0b';
+            let aColor = document.getElementById('away_color').value || '#06b6d4';
+
+            let sport = stateData.sport_type || 'futsal';
+            let hSub = sport === 'futsal' ? `Foul: ${extraObj.home_foul || 0}/5` : (sport === 'panahan' ? `End ${extraObj.archery_end || 1}` : 'Regu Home');
+            let aSub = sport === 'futsal' ? `Foul: ${extraObj.away_foul || 0}/5` : (sport === 'panahan' ? `End ${extraObj.archery_end || 1}` : 'Regu Away');
+
+            document.getElementById('pv_match_name').innerText = document.getElementById('match_name').value || 'LIVE';
+
+            if (!isSwapped) {
+                document.getElementById('pv_left_name').innerText = hName;
+                document.getElementById('pv_left_score').innerText = hScore;
+                document.getElementById('pv_left_sub').innerText = hSub;
+                document.getElementById('pv_left_jersey').style.background = hColor;
+
+                document.getElementById('pv_right_name').innerText = aName;
+                document.getElementById('pv_right_score').innerText = aScore;
+                document.getElementById('pv_right_sub').innerText = aSub;
+                document.getElementById('pv_right_jersey').style.background = aColor;
+            } else {
+                document.getElementById('pv_left_name').innerText = aName;
+                document.getElementById('pv_left_score').innerText = aScore;
+                document.getElementById('pv_left_sub').innerText = aSub;
+                document.getElementById('pv_left_jersey').style.background = aColor;
+
+                document.getElementById('pv_right_name').innerText = hName;
+                document.getElementById('pv_right_score').innerText = hScore;
+                document.getElementById('pv_right_sub').innerText = hSub;
+                document.getElementById('pv_right_jersey').style.background = hColor;
+            }
         }
 
         function toggleGoalAnimationSetting() {
@@ -197,7 +532,7 @@
             btn.className = isEnabled ? "px-3 py-1 rounded text-xs font-black bg-emerald-600 text-white" : "px-3 py-1 rounded text-xs font-black bg-rose-600 text-white";
         }
 
-        function switchSport(sport) {
+        function switchSport(sport, autoSave = true) {
             stateData.sport_type = sport;
             document.querySelectorAll('.sport-btn').forEach(b => {
                 b.classList.remove('border-amber-500', 'bg-amber-500/10');
@@ -206,43 +541,12 @@
             document.getElementById('btn-sport-' + sport).classList.remove('border-slate-700', 'bg-slate-800/50');
             document.getElementById('btn-sport-' + sport).classList.add('border-amber-500', 'bg-amber-500/10');
             document.getElementById('rules-box').innerHTML = SPORT_CFG[sport].rules;
+
+            populateTeamDropdowns();
             filterMatchesByRound();
             renderPanel(sport);
-        }
-
-        function filterMatchesByRound() {
-            let round = document.getElementById('select_round').value;
-            let matchSel = document.getElementById('select_match_item');
-            matchSel.innerHTML = '<option value="">-- Pilih Match / Pertandingan --</option>';
-            let filtered = dbMatches.filter(m => m.sport_type === stateData.sport_type && (!round || m.round_name === round));
-            filtered.forEach((m, idx) => {
-                matchSel.innerHTML += `<option value="${idx}">${m.match_title} (${m.home_team} vs ${m.away_team})</option>`;
-            });
-        }
-
-        function loadSelectedMatch(idx) {
-            if(idx === "") return;
-            let round = document.getElementById('select_round').value;
-            let filtered = dbMatches.filter(m => m.sport_type === stateData.sport_type && (!round || m.round_name === round));
-            let match = filtered[idx];
-            if(match) {
-                document.getElementById('match_name').value = `${match.round_name} - ${match.match_title}`;
-                document.getElementById('home_name').value = match.home_team;
-                document.getElementById('away_name').value = match.away_team;
-                saveChanges();
-            }
-        }
-
-        function swapTeams() {
-            let h = document.getElementById('home_name').value;
-            let a = document.getElementById('away_name').value;
-            document.getElementById('home_name').value = a;
-            document.getElementById('away_name').value = h;
-            let hs = stateData.home_score;
-            stateData.home_score = stateData.away_score;
-            stateData.away_score = hs;
-            renderPanel(stateData.sport_type);
-            saveChanges();
+            updateLivePreview();
+            if (autoSave) saveChanges();
         }
 
         function renderPanel(sport) {
@@ -253,20 +557,20 @@
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                             <div class="flex justify-between items-center"><span class="font-bold text-amber-400">HOME</span><span class="text-xs text-rose-400">Foul: <strong id="home_foul_val">${extraObj.home_foul}</strong>/5</span></div>
                             <div class="flex items-center justify-between">
-                                <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score}</span>
+                                <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score || 0}</span>
                                 <div class="flex flex-col gap-2">
                                     <button onclick="addGoal('home')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
-                                    <div class="flex gap-1"><button onclick="adjScore('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('home', 1)" class="bg-rose-700 px-2 py-1 rounded text-xs">+Foul</button></div>
+                                    <div class="flex gap-1"><button onclick="adjScore('home', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('home', 1)" class="bg-rose-700 px-2.5 py-1 rounded text-xs">+Foul</button><button onclick="addFoul('home', -1)" class="bg-slate-800 px-2 py-1 rounded text-xs">-Foul</button></div>
                                 </div>
                             </div>
                         </div>
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                             <div class="flex justify-between items-center"><span class="font-bold text-cyan-400">AWAY</span><span class="text-xs text-rose-400">Foul: <strong id="away_foul_val">${extraObj.away_foul}</strong>/5</span></div>
                             <div class="flex items-center justify-between">
-                                <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score}</span>
+                                <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score || 0}</span>
                                 <div class="flex flex-col gap-2">
                                     <button onclick="addGoal('away')" class="bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 rounded-xl font-black shadow">⚽ +1 GOL</button>
-                                    <div class="flex gap-1"><button onclick="adjScore('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('away', 1)" class="bg-rose-700 px-2 py-1 rounded text-xs">+Foul</button></div>
+                                    <div class="flex gap-1"><button onclick="adjScore('away', -1)" class="bg-slate-800 px-2.5 py-1 rounded text-xs">-1</button><button onclick="addFoul('away', 1)" class="bg-rose-700 px-2.5 py-1 rounded text-xs">+Foul</button><button onclick="addFoul('away', -1)" class="bg-slate-800 px-2 py-1 rounded text-xs">-Foul</button></div>
                                 </div>
                             </div>
                         </div>
@@ -275,59 +579,118 @@
                 c.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-                            <span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score}</span>
+                            <div><div class="text-xs text-amber-400 font-bold mb-1">HOME</div><span id="home_score_val" class="text-5xl font-black text-white">${stateData.home_score || 0}</span></div>
                             <div class="grid grid-cols-2 gap-1.5"><button onclick="adjScore('home', 100)" class="bg-emerald-600 px-3 py-2 rounded font-bold text-xs">+100</button><button onclick="adjScore('home', 50)" class="bg-emerald-700 px-3 py-2 rounded font-bold text-xs">+50</button><button onclick="adjScore('home', -50)" class="bg-rose-600 px-3 py-2 rounded font-bold text-xs">-50</button><button onclick="adjScore('home', -10)" class="bg-rose-800 px-3 py-2 rounded font-bold text-xs">-10</button></div>
                         </div>
                         <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between">
-                            <span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score}</span>
+                            <div><div class="text-xs text-cyan-400 font-bold mb-1">AWAY</div><span id="away_score_val" class="text-5xl font-black text-white">${stateData.away_score || 0}</span></div>
                             <div class="grid grid-cols-2 gap-1.5"><button onclick="adjScore('away', 100)" class="bg-emerald-600 px-3 py-2 rounded font-bold text-xs">+100</button><button onclick="adjScore('away', 50)" class="bg-emerald-700 px-3 py-2 rounded font-bold text-xs">+50</button><button onclick="adjScore('away', -50)" class="bg-rose-600 px-3 py-2 rounded font-bold text-xs">-50</button><button onclick="adjScore('away', -10)" class="bg-rose-800 px-3 py-2 rounded font-bold text-xs">-10</button></div>
                         </div>
                     </div>`;
-            } else {
-                c.innerHTML = `<div class="p-4 bg-slate-950 rounded text-center text-xs text-slate-400">Panel Panahan aktif. Gunakan input standar.</div>`;
+            } else if (sport === 'panahan') {
+                const vals = ['X', '10', '9', '8', '7', '6', '5', '4', '3', '2', '1', 'M'];
+                const makeBtns = (side) => vals.map(v => `<button onclick="addArrow('${side}', '${v}')" class="bg-slate-800 hover:bg-amber-500 hover:text-slate-950 font-black text-xs py-1.5 rounded">${v}</button>`).join('');
+                c.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800">
+                            <span class="text-xs font-bold text-amber-400">Rambahan (End) Aktif: <strong class="text-base text-white">${extraObj.archery_end || 1}</strong></span>
+                            <div class="flex gap-2">
+                                <button onclick="nextArcheryEnd()" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1 rounded text-xs font-bold">End Berikutnya ➔</button>
+                                <button onclick="resetArcheryEnd()" class="bg-slate-800 px-3 py-1 rounded text-xs">Reset Panah End Ini</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                                <div class="flex justify-between items-center"><span class="font-bold text-amber-400">HOME TOTAL</span><span id="home_score_val" class="text-4xl font-black">${stateData.home_score || 0}</span></div>
+                                <div class="text-xs text-slate-300 font-mono bg-slate-900 p-2 rounded">Panah End ini: <strong>${(extraObj.home_arrows || []).join(' - ') || '-'}</strong></div>
+                                <div class="grid grid-cols-6 gap-1.5">${makeBtns('home')}</div>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                                <div class="flex justify-between items-center"><span class="font-bold text-cyan-400">AWAY TOTAL</span><span id="away_score_val" class="text-4xl font-black">${stateData.away_score || 0}</span></div>
+                                <div class="text-xs text-slate-300 font-mono bg-slate-900 p-2 rounded">Panah End ini: <strong>${(extraObj.away_arrows || []).join(' - ') || '-'}</strong></div>
+                                <div class="grid grid-cols-6 gap-1.5">${makeBtns('away')}</div>
+                            </div>
+                        </div>
+                    </div>`;
             }
+        }
+
+        function addArrow(side, val) {
+            let pts = val === 'X' ? 10 : (val === 'M' ? 0 : parseInt(val));
+            extraObj[side + '_arrows'] = extraObj[side + '_arrows'] || [];
+            extraObj[side + '_arrows'].push(val);
+            stateData[side + '_score'] = (parseInt(stateData[side + '_score']) || 0) + pts;
+            renderPanel('panahan');
+            saveChanges();
+        }
+
+        function nextArcheryEnd() {
+            extraObj.archery_end = (extraObj.archery_end || 1) + 1;
+            extraObj.home_arrows = [];
+            extraObj.away_arrows = [];
+            renderPanel('panahan');
+            saveChanges();
+        }
+
+        function resetArcheryEnd() {
+            extraObj.home_arrows = [];
+            extraObj.away_arrows = [];
+            renderPanel('panahan');
+            saveChanges();
         }
 
         function addGoal(side) {
             stateData[side + '_score'] = (parseInt(stateData[side + '_score']) || 0) + 1;
             stateData.goal_trigger = Date.now();
             stateData.last_scoring_team = document.getElementById(side + '_name').value;
-            document.getElementById(side + '_score_val').innerText = stateData[side + '_score'];
+            let el = document.getElementById(side + '_score_val');
+            if (el) el.innerText = stateData[side + '_score'];
             saveChanges();
         }
 
         function adjScore(side, val) {
             stateData[side + '_score'] = (parseInt(stateData[side + '_score']) || 0) + val;
-            document.getElementById(side + '_score_val').innerText = stateData[side + '_score'];
+            let el = document.getElementById(side + '_score_val');
+            if (el) el.innerText = stateData[side + '_score'];
             saveChanges();
         }
 
         function addFoul(side, val) {
             extraObj[side + '_foul'] = Math.max(0, (extraObj[side + '_foul'] || 0) + val);
-            document.getElementById(side + '_foul_val').innerText = extraObj[side + '_foul'];
+            let el = document.getElementById(side + '_foul_val');
+            if (el) el.innerText = extraObj[side + '_foul'];
             saveChanges();
         }
 
         function resetScores() {
-            if(!confirm("Reset skor pertandingan ini?")) return;
+            if (!confirm("Reset skor pertandingan ini?")) return;
             stateData.home_score = 0;
             stateData.away_score = 0;
             extraObj.home_foul = 0;
             extraObj.away_foul = 0;
+            extraObj.archery_end = 1;
+            extraObj.home_arrows = [];
+            extraObj.away_arrows = [];
             renderPanel(stateData.sport_type);
             saveChanges();
         }
 
         function setTimer() {
             let mins = parseInt(document.getElementById('timer_mins').value) || 20;
-            stateData.timer_mode = document.getElementById('timer_mode').value;
-            stateData.timer_seconds = (stateData.timer_mode === 'down') ? mins * 60 : 0;
-            stateData.timer_status = 'stopped';
+            localTimerMode = document.getElementById('timer_mode').value;
+            localTimerSeconds = (localTimerMode === 'down') ? mins * 60 : 0;
+            localTimerStatus = 'stopped';
+            updateTimerUI();
             saveChanges();
         }
 
         function controlTimer(st) {
-            stateData.timer_status = st;
+            localTimerStatus = st;
+            if (st === 'stopped') {
+                let mins = parseInt(document.getElementById('timer_mins').value) || 20;
+                localTimerSeconds = (localTimerMode === 'down') ? mins * 60 : 0;
+            }
+            updateTimerUI();
             saveChanges();
         }
 
@@ -348,7 +711,14 @@
             stateData.match_name = document.getElementById('match_name').value;
             stateData.home_name = document.getElementById('home_name').value;
             stateData.away_name = document.getElementById('away_name').value;
+            stateData.home_color = document.getElementById('home_color').value;
+            stateData.away_color = document.getElementById('away_color').value;
+            stateData.timer_seconds = localTimerSeconds;
+            stateData.timer_status = localTimerStatus;
+            stateData.timer_mode = localTimerMode;
             stateData.extra_data = JSON.stringify(extraObj);
+
+            updateLivePreview();
 
             let b = document.getElementById('sync-status');
             b.innerText = "Menyimpan..."; b.className = "text-xs bg-amber-600 px-3 py-1.5 rounded-full font-bold";
@@ -363,7 +733,7 @@
         }
 
         async function archiveMatch() {
-            if(!confirm("Arsipkan hasil match ini ke database?")) return;
+            if (!confirm("Arsipkan hasil match ini ke database?")) return;
             await supabaseClient.from('match_history').insert([{
                 sport_type: stateData.sport_type,
                 event_name: stateData.event_name,
@@ -376,6 +746,21 @@
             }]);
             alert("Hasil berhasil diarsipkan ke database!");
         }
+
+        // Keyboard Shortcuts (non-aktif saat mengetik di input/textarea)
+        document.addEventListener('keydown', (e) => {
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                controlTimer(localTimerStatus === 'running' ? 'paused' : 'running');
+            } else if (e.key === '1') {
+                addGoal('home');
+            } else if (e.key === '2') {
+                addGoal('away');
+            } else if (e.key.toLowerCase() === 'g') {
+                triggerStinger();
+            }
+        });
 
         initLoad();
     </script>
