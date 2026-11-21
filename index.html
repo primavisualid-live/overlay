@@ -286,8 +286,9 @@
         });
 
         function formatMMSS(totalSecs) {
-            let mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
-            let secs = String(totalSecs % 60).padStart(2, '0');
+            let s = Math.max(0, parseInt(totalSecs) || 0);
+            let mins = String(Math.floor(s / 60)).padStart(2, '0');
+            let secs = String(s % 60).padStart(2, '0');
             return `${mins}:${secs}`;
         }
 
@@ -418,7 +419,11 @@
 
         async function flipSidesFromFullscreen() {
             let extra = {};
-            try { extra = JSON.parse(currentState.extra_data || "{}"); } catch(e) {}
+            try {
+                extra = (typeof currentState.extra_data === 'string')
+                    ? JSON.parse(currentState.extra_data || "{}")
+                    : (currentState.extra_data || {});
+            } catch(e) {}
             extra.projector_opposite = !Boolean(extra.projector_opposite);
             await supabaseClient.from('tournament_state')
                 .update({ extra_data: JSON.stringify(extra) })
@@ -478,7 +483,11 @@
         function updateUI(s) {
             currentState = s;
             let extra = {};
-            try { extra = JSON.parse(s.extra_data || "{}"); } catch(e) {}
+            try {
+                extra = (typeof s.extra_data === 'string')
+                    ? JSON.parse(s.extra_data || "{}")
+                    : (s.extra_data || {});
+            } catch(e) {}
             currentExtra = extra;
 
             document.getElementById('obs_event_name').innerText = s.event_name || 'LIVE EVENT';
@@ -546,7 +555,7 @@
                 document.getElementById('obs_right_sub_area').innerHTML = `<span class="text-[10px] font-mono text-slate-400">REGU KANAN</span>`;
             }
 
-            // Timer Sync (Selalu presisi saat refresh atau reconnect)
+            // Timer Sync
             timerMode = s.timer_mode || 'down';
             timerStatus = s.timer_status || 'stopped';
             timerSeconds = computeSyncedTimerSeconds();
@@ -603,7 +612,7 @@
 
             // Trigger Goal
             let gTrigger = parseInt(s.goal_trigger) || 0;
-            let animEnabled = (s.goal_animation_enabled === "1" || s.goal_animation_enabled === 1);
+            let animEnabled = (s.goal_animation_enabled === "1" || s.goal_animation_enabled === 1 || s.goal_animation_enabled === true);
             if (animEnabled && gTrigger > 0 && lastGoalTrigger !== 0 && gTrigger !== lastGoalTrigger) {
                 triggerScoreboardGoalAnimation(s.last_scoring_team, leftData, rightData);
             }
@@ -611,7 +620,7 @@
 
             // Lower Third
             if (!isFullscreen) {
-                if (parseInt(s.active_lt_show) === 1) {
+                if (parseInt(s.active_lt_show) === 1 || s.active_lt_show === true) {
                     document.getElementById('obs_lt_title').innerText = s.active_lt_title || '';
                     document.getElementById('obs_lt_subtitle').innerText = s.active_lt_subtitle || '';
                     ltContainer.classList.remove('hidden', 'slide-out');
@@ -641,6 +650,9 @@
         }
         fetchInitialState();
 
+        // Fallback polling ringan setiap 2.5 detik jika Realtime WebSocket terputus di OBS
+        setInterval(fetchInitialState, 2500);
+
         supabaseClient
             .channel('public:tournament_state')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
@@ -656,7 +668,11 @@
         async function reportObsVisibility(isVisible) {
             if (!currentState || !currentState.id) return;
             let extra = {};
-            try { extra = JSON.parse(currentState.extra_data || "{}"); } catch(e) {}
+            try {
+                extra = (typeof currentState.extra_data === 'string')
+                    ? JSON.parse(currentState.extra_data || "{}")
+                    : (currentState.extra_data || {});
+            } catch(e) {}
             extra.obs_is_live = Boolean(isVisible);
             await supabaseClient.from('tournament_state')
                 .update({ extra_data: JSON.stringify(extra) })
