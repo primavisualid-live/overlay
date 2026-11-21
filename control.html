@@ -428,6 +428,7 @@
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let stateData = {};
+        let validDbKeys = [];
         let extraObj = {
             home_foul: 0,
             away_foul: 0,
@@ -436,6 +437,8 @@
             timeout_active: false,
             timeout_team: '',
             timeout_seconds: 60,
+            timeout_started_at: null,
+            timer_started_at: null,
             projector_opposite: false,
             home_players: [],
             away_players: [],
@@ -443,6 +446,7 @@
             red_penalty_active: false,
             red_penalty_team: '',
             red_penalty_seconds: 120,
+            red_started_at: null,
             pen_active: false,
             home_pens: [],
             away_pens: [],
@@ -465,34 +469,65 @@
         };
 
         function formatMMSS(totalSecs) {
-            let mins = String(Math.floor(totalSecs / 60)).padStart(2, '0');
-            let secs = String(totalSecs % 60).padStart(2, '0');
+            let s = Math.max(0, parseInt(totalSecs) || 0);
+            let mins = String(Math.floor(s / 60)).padStart(2, '0');
+            let secs = String(s % 60).padStart(2, '0');
             return `${mins}:${secs}`;
         }
 
-        // Timer Pertandingan, Time-Out & Hukuman Kartu Merah 2 Menit
+        function computeSyncedTimerSeconds() {
+            let baseSecs = parseInt(stateData.timer_seconds) || 0;
+            if (localTimerStatus === 'running' && extraObj.timer_started_at) {
+                const elapsed = Math.floor((Date.now() - parseInt(extraObj.timer_started_at)) / 1000);
+                return (localTimerMode === 'down') ? Math.max(0, baseSecs - elapsed) : (baseSecs + elapsed);
+            }
+            return baseSecs;
+        }
+
+        function computeSyncedTimeoutSeconds() {
+            let baseSecs = parseInt(extraObj.timeout_seconds) || 60;
+            if (extraObj.timeout_active && extraObj.timeout_started_at) {
+                const elapsed = Math.floor((Date.now() - parseInt(extraObj.timeout_started_at)) / 1000);
+                return Math.max(0, baseSecs - elapsed);
+            }
+            return baseSecs;
+        }
+
+        function computeSyncedRedSeconds() {
+            let baseSecs = parseInt(extraObj.red_penalty_seconds) || 120;
+            if (extraObj.red_penalty_active && localTimerStatus === 'running' && extraObj.red_started_at) {
+                const elapsed = Math.floor((Date.now() - parseInt(extraObj.red_started_at)) / 1000);
+                return Math.max(0, baseSecs - elapsed);
+            }
+            return baseSecs;
+        }
+
+        let liveTimeoutRemain = 60;
+        let liveRedRemain = 120;
+
         setInterval(() => {
             if (localTimerStatus === 'running') {
-                if (localTimerMode === 'down' && localTimerSeconds > 0) localTimerSeconds--;
-                else if (localTimerMode === 'up') localTimerSeconds++;
+                localTimerSeconds = computeSyncedTimerSeconds();
                 updateTimerUI();
 
-                if (extraObj.red_penalty_active && extraObj.red_penalty_seconds > 0) {
-                    extraObj.red_penalty_seconds--;
+                if (extraObj.red_penalty_active) {
+                    liveRedRemain = computeSyncedRedSeconds();
                     updateRedPenaltyUI();
-                    if (extraObj.red_penalty_seconds === 0) {
+                    if (liveRedRemain === 0) {
                         extraObj.red_penalty_active = false;
+                        extraObj.red_started_at = null;
                         updateRedPenaltyUI();
                         saveChanges();
                     }
                 }
             }
 
-            if (extraObj.timeout_active && extraObj.timeout_seconds > 0) {
-                extraObj.timeout_seconds--;
+            if (extraObj.timeout_active) {
+                liveTimeoutRemain = computeSyncedTimeoutSeconds();
                 updateTimeoutUI();
-                if (extraObj.timeout_seconds === 0) {
+                if (liveTimeoutRemain === 0) {
                     extraObj.timeout_active = false;
+                    extraObj.timeout_started_at = null;
                     updateTimeoutUI();
                     saveChanges();
                 }
@@ -508,7 +543,7 @@
         function updateTimeoutUI() {
             let el = document.getElementById('control_timeout_display');
             if (extraObj.timeout_active) {
-                el.innerText = `${extraObj.timeout_team} • ${formatMMSS(extraObj.timeout_seconds)}`;
+                el.innerText = `${extraObj.timeout_team} • ${formatMMSS(liveTimeoutRemain)}`;
                 el.className = "text-lg font-mono font-black px-3 py-1 rounded-lg bg-amber-500 text-slate-950 animate-pulse";
             } else {
                 el.innerText = "TIDAK AKTIF";
@@ -522,7 +557,7 @@
             if (extraObj.red_penalty_active) {
                 statusBadge.classList.remove('hidden');
                 clearRow.classList.remove('hidden');
-                statusBadge.innerText = `Hukuman Merah (${extraObj.red_penalty_team}): ${formatMMSS(extraObj.red_penalty_seconds)}`;
+                statusBadge.innerText = `Hukuman Merah (${extraObj.red_penalty_team}): ${formatMMSS(liveRedRemain)}`;
             } else {
                 statusBadge.classList.add('hidden');
                 clearRow.classList.add('hidden');
@@ -530,12 +565,25 @@
         }
 
         function startTimeout(side) {
+            if (localTimerStatus === 'running') {
+                localTimerSeconds = computeSyncedTimerSeconds();
+                stateData.timer_seconds = localTimerSeconds;
+                extraObj.timer_started_at = null;
+                if (extraObj.red_penalty_active) {
+                    liveRedRemain = computeSyncedRedSeconds();
+                    extraObj.red_penalty_seconds = liveRedRemain;
+                    extraObj.red_started_at = null;
+                }
+            }
             localTimerStatus = 'paused';
             updateTimerUI();
 
             let customDur = parseInt(document.getElementById('timeout_duration_input').value) || 60;
             extraObj.timeout_active = true;
             extraObj.timeout_seconds = Math.max(1, customDur);
+            extraObj.timeout_started_at = Date.now();
+            liveTimeoutRemain = extraObj.timeout_seconds;
+
             if (side === 'home') {
                 extraObj.home_to_used = true;
                 extraObj.timeout_team = document.getElementById('home_name').value || 'HOME';
@@ -551,6 +599,8 @@
             let customDur = parseInt(document.getElementById('timeout_duration_input').value) || 60;
             extraObj.timeout_active = false;
             extraObj.timeout_seconds = customDur;
+            extraObj.timeout_started_at = null;
+            liveTimeoutRemain = customDur;
             updateTimeoutUI();
             saveChanges();
         }
@@ -559,6 +609,7 @@
             extraObj.home_to_used = false;
             extraObj.away_to_used = false;
             extraObj.timeout_active = false;
+            extraObj.timeout_started_at = null;
             updateTimeoutUI();
             saveChanges();
         }
@@ -571,6 +622,8 @@
                 const mins = parseInt(document.getElementById('timer_mins').value) || 20;
                 localTimerSeconds = (localTimerMode === 'down') ? mins * 60 : 0;
                 localTimerStatus = 'stopped';
+                stateData.timer_seconds = localTimerSeconds;
+                extraObj.timer_started_at = null;
                 updateTimerUI();
             } else {
                 extraObj.pen_active = true;
@@ -691,6 +744,8 @@
                 extraObj.red_penalty_active = true;
                 extraObj.red_penalty_team = teamName;
                 extraObj.red_penalty_seconds = 120;
+                extraObj.red_started_at = (localTimerStatus === 'running') ? Date.now() : null;
+                liveRedRemain = 120;
                 updateRedPenaltyUI();
             }
 
@@ -701,6 +756,8 @@
         function clearRedPenalty() {
             extraObj.red_penalty_active = false;
             extraObj.red_penalty_seconds = 120;
+            extraObj.red_started_at = null;
+            liveRedRemain = 120;
             updateRedPenaltyUI();
             saveChanges();
         }
@@ -710,13 +767,18 @@
             try {
                 await Promise.all([fetchTeams(), fetchMatches()]);
 
-                let { data: state } = await supabaseClient.from('tournament_state').select('*').eq('id', 1).single();
+                let { data: state, error } = await supabaseClient.from('tournament_state').select('*').eq('id', 1).single();
                 if (state) {
                     stateData = state;
+                    validDbKeys = Object.keys(state);
                     try {
-                        let parsed = JSON.parse(stateData.extra_data || "{}");
+                        let parsed = (typeof stateData.extra_data === 'string')
+                            ? JSON.parse(stateData.extra_data || "{}")
+                            : (stateData.extra_data || {});
                         extraObj = { ...extraObj, ...parsed };
                     } catch(e){}
+                } else if (error) {
+                    console.error("Gagal memuat state:", error);
                 }
             } catch(e){ console.error(e); }
 
@@ -734,9 +796,11 @@
             document.getElementById('home_player_count').innerText = (extraObj.home_players || []).length;
             document.getElementById('away_player_count').innerText = (extraObj.away_players || []).length;
 
-            localTimerSeconds = parseInt(stateData.timer_seconds) || 1200;
             localTimerStatus = stateData.timer_status || 'stopped';
             localTimerMode = stateData.timer_mode || 'down';
+            localTimerSeconds = computeSyncedTimerSeconds();
+            liveTimeoutRemain = computeSyncedTimeoutSeconds();
+            liveRedRemain = computeSyncedRedSeconds();
             document.getElementById('timer_mode').value = localTimerMode;
 
             updateTimerUI();
@@ -763,13 +827,14 @@
             }
         }
 
-        // Dengarkan update dari Overlay (misal saat tombol flip di layar proyektor diklik atau OBS aktif)
         supabaseClient
             .channel('control:tournament_state')
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
                 if (payload.new && payload.new.extra_data) {
                     try {
-                        const incomingExtra = JSON.parse(payload.new.extra_data);
+                        const incomingExtra = (typeof payload.new.extra_data === 'string')
+                            ? JSON.parse(payload.new.extra_data)
+                            : payload.new.extra_data;
                         if (typeof incomingExtra.projector_opposite !== 'undefined') {
                             extraObj.projector_opposite = incomingExtra.projector_opposite;
                             updateProjectorOppositeUI();
@@ -901,7 +966,9 @@
                 extraObj.home_to_used = false;
                 extraObj.away_to_used = false;
                 extraObj.timeout_active = false;
+                extraObj.timeout_started_at = null;
                 extraObj.red_penalty_active = false;
+                extraObj.red_started_at = null;
                 extraObj.pen_active = false;
                 extraObj.home_pens = [];
                 extraObj.away_pens = [];
@@ -996,14 +1063,14 @@
         }
 
         function toggleGoalAnimationSetting() {
-            stateData.goal_animation_enabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1) ? "0" : "1";
+            stateData.goal_animation_enabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1 || stateData.goal_animation_enabled === true) ? 0 : 1;
             updateGoalAnimButtonUI();
             saveChanges();
         }
 
         function updateGoalAnimButtonUI() {
             let btn = document.getElementById('toggle-goal-anim-btn');
-            let isEnabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1);
+            let isEnabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1 || stateData.goal_animation_enabled === true);
             btn.innerText = isEnabled ? "AKTIF (ON)" : "MATI (OFF)";
             btn.className = isEnabled ? "px-3 py-1 rounded text-xs font-black bg-emerald-600 text-white" : "px-3 py-1 rounded text-xs font-black bg-rose-600 text-white";
         }
@@ -1197,7 +1264,9 @@
             extraObj.home_to_used = false;
             extraObj.away_to_used = false;
             extraObj.timeout_active = false;
+            extraObj.timeout_started_at = null;
             extraObj.red_penalty_active = false;
+            extraObj.red_started_at = null;
             extraObj.pen_active = false;
             extraObj.home_pens = [];
             extraObj.away_pens = [];
@@ -1215,15 +1284,41 @@
             localTimerMode = document.getElementById('timer_mode').value;
             localTimerSeconds = (localTimerMode === 'down') ? mins * 60 : 0;
             localTimerStatus = 'stopped';
+            stateData.timer_seconds = localTimerSeconds;
+            extraObj.timer_started_at = null;
             updateTimerUI();
             saveChanges();
         }
 
         function controlTimer(st) {
+            if (localTimerStatus === 'running') {
+                localTimerSeconds = computeSyncedTimerSeconds();
+            }
+
             localTimerStatus = st;
-            if (st === 'stopped') {
+            if (st === 'running') {
+                stateData.timer_seconds = localTimerSeconds;
+                extraObj.timer_started_at = Date.now();
+                if (extraObj.red_penalty_active) {
+                    extraObj.red_penalty_seconds = liveRedRemain;
+                    extraObj.red_started_at = Date.now();
+                }
+            } else if (st === 'paused') {
+                stateData.timer_seconds = localTimerSeconds;
+                extraObj.timer_started_at = null;
+                if (extraObj.red_penalty_active) {
+                    extraObj.red_penalty_seconds = liveRedRemain;
+                    extraObj.red_started_at = null;
+                }
+            } else if (st === 'stopped') {
                 let mins = parseInt(document.getElementById('timer_mins').value) || 20;
                 localTimerSeconds = (localTimerMode === 'down') ? mins * 60 : 0;
+                stateData.timer_seconds = localTimerSeconds;
+                extraObj.timer_started_at = null;
+                if (extraObj.red_penalty_active) {
+                    extraObj.red_penalty_seconds = liveRedRemain;
+                    extraObj.red_started_at = null;
+                }
             }
             updateTimerUI();
             saveChanges();
@@ -1250,22 +1345,46 @@
             stateData.home_shorts_color = document.getElementById('home_shorts_color').value;
             stateData.away_color = document.getElementById('away_color').value;
             stateData.away_shorts_color = document.getElementById('away_shorts_color').value;
-            stateData.timer_seconds = localTimerSeconds;
+
+            if (localTimerStatus !== 'running') {
+                stateData.timer_seconds = localTimerSeconds;
+            }
             stateData.timer_status = localTimerStatus;
             stateData.timer_mode = localTimerMode;
             stateData.extra_data = JSON.stringify(extraObj);
 
             updateLivePreview();
 
+            // Hanya kirim kolom yang benar-benar ada di tabel tournament_state (kecuali id & updated_at)
+            const allowedFields = [
+                'sport_type', 'event_name', 'match_name', 'home_name', 'away_name',
+                'home_score', 'away_score', 'home_color', 'home_shorts_color',
+                'away_color', 'away_shorts_color', 'timer_seconds', 'timer_status',
+                'timer_mode', 'fs_swapped', 'goal_animation_enabled', 'goal_trigger',
+                'last_scoring_team', 'active_lt_title', 'active_lt_subtitle',
+                'active_lt_show', 'stinger_trigger', 'extra_data'
+            ];
+
+            let payload = {};
+            allowedFields.forEach(k => {
+                if ((validDbKeys.length === 0 || validDbKeys.includes(k)) && typeof stateData[k] !== 'undefined') {
+                    payload[k] = stateData[k];
+                }
+            });
+
             let b = document.getElementById('sync-status');
-            b.innerText = "Menyimpan..."; b.className = "text-xs bg-amber-600 px-3 py-1.5 rounded-full font-bold";
+            b.innerText = "Menyimpan...";
+            b.className = "text-xs bg-amber-600 px-3 py-1.5 rounded-full font-bold";
             
-            let { error } = await supabaseClient.from('tournament_state').update(stateData).eq('id', 1);
+            let { error } = await supabaseClient.from('tournament_state').update(payload).eq('id', 1);
             
             if (!error) {
-                b.innerText = "Tersinkron ✔"; b.className = "text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold";
+                b.innerText = "Tersinkron ✔";
+                b.className = "text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold";
             } else {
-                b.innerText = "Gagal"; b.className = "text-xs bg-rose-600 px-3 py-1.5 rounded-full font-bold";
+                console.error("Supabase Update Error:", error);
+                b.innerText = "Gagal: " + error.message;
+                b.className = "text-xs bg-rose-600 px-3 py-1.5 rounded-full font-bold";
             }
         }
 
