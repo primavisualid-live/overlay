@@ -2676,17 +2676,6 @@ function loadSelectedMatch(idx) {
             }
             // Sport buttons removed (futsal only)
         }
-            document.getElementById('rules-box').innerHTML = SPORT_CFG[sport].rules;
-
-            document.getElementById('timeout-control-box').style.display = (sport === 'futsal') ? 'flex' : 'none';
-            document.getElementById('card-control-box').style.display = (sport === 'futsal') ? 'block' : 'none';
-
-            populateTeamDropdowns();
-            filterMatchesByRound();
-            renderPanel(sport);
-            updateLivePreview();
-            if (autoSave) saveChanges();
-        }
 
         function renderPenaltyDots(arr) {
             let html = '';
