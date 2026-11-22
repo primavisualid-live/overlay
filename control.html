@@ -68,131 +68,14 @@
             </div>
         </section>
 
-        <!-- 1. PILIH CABANG & ANIMASI -->
+        <!-- 1. MANAJEMEN TIM, PEMAIN & JADWAL MATCH (FUTSAL) -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <div class="flex flex-wrap justify-between items-center gap-2">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-amber-400">1. Cabang Lomba & Pengaturan Animasi</h2>
-                <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                    <span class="text-xs text-slate-300 font-bold">Animasi Goal di Papan Skor:</span>
-                    <button id="toggle-goal-anim-btn" onclick="toggleGoalAnimationSetting()" class="px-3 py-1 rounded text-xs font-black transition">AKTIF</button>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <button onclick="switchSport('futsal')" id="btn-sport-futsal" class="sport-btn p-3 rounded-xl border-2 border-amber-500 bg-amber-500/10 text-left">
-                    <div class="text-lg font-black text-white">⚽ Futsal</div>
-                </button>
-                <button onclick="switchSport('panahan')" id="btn-sport-panahan" class="sport-btn p-3 rounded-xl border-2 border-slate-700 bg-slate-800/50 text-left">
-                    <div class="text-lg font-black text-white">🏹 Panahan</div>
-                </button>
-                <button onclick="switchSport('cerdas_cermat')" id="btn-sport-cerdas_cermat" class="sport-btn p-3 rounded-xl border-2 border-slate-700 bg-slate-800/50 text-left">
-                    <div class="text-lg font-black text-white">🎙️ Cerdas Cermat</div>
+                <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400">1. Manajemen Tim, Pemain & Jadwal Match</h2>
+                <button onclick="toggleCrudModal()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1.5 rounded-lg font-black text-xs">
+                    ⚙️ Kelola Tim & Match
                 </button>
             </div>
-            <div id="rules-box" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300"></div>
-        </section>
-
-        <!-- 1.5 MANAGER DASHBOARD - ALUR LENGKAP -->
-        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4" id="manager-dashboard">
-            <div class="flex flex-wrap justify-between items-center gap-2">
-                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">🎯 MANAGER DASHBOARD - Alur Lengkap</h2>
-                <button onclick="refreshManagerDashboard()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-black text-xs">🔄 Refresh</button>
-            </div>
-
-            <!-- STEP 1: PILIH TIM -->
-            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">1️⃣ PILIH TIM</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1">Cabang Lomba</label>
-                        <select id="mgr-sport-filter" onchange="loadManagerTeams()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-bold">
-                            <option value="futsal">⚽ Futsal</option>
-                            <option value="panahan">🏹 Panahan</option>
-                            <option value="cerdas_cermat">🎙️ Cerdas Cermat</option>
-                        </select>
-                    </div>
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
-                        <label class="block text-[10px] font-bold text-slate-400 mb-1">Pilih Tim</label>
-                        <select id="mgr-team-select" onchange="loadManagerTeamDetail()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-bold">
-                            <option value="">-- Pilih Tim --</option>
-                        </select>
-                    </div>
-                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 flex items-end">
-                        <button onclick="openTeamEditorForManager()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 w-full py-2 rounded-lg font-black text-xs" disabled id="mgr-btn-edit-team">✏️ Edit Tim</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- STEP 2: DETAIL TIM & PEMAIN -->
-            <div id="mgr-team-detail" class="hidden bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-4">
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    <div class="flex items-center gap-4">
-                        <div id="mgr-team-badge" class="w-16 h-20 rounded overflow-hidden border border-white/20 flex flex-col flex-shrink-0">
-                            <span id="mgr-team-shirt" class="h-[60%] w-full" style="background:#f59e0b"></span>
-                            <span id="mgr-team-shorts" class="h-[40%] w-full border-t border-black/30" style="background:#1e293b"></span>
-                        </div>
-                        <div>
-                            <div id="mgr-team-name" class="text-xl font-black text-white">NAMA TIM</div>
-                            <div id="mgr-team-meta" class="text-xs text-slate-400">0 Pemain | 0 Match | 0 Riwayat</div>
-                        </div>
-                    </div>
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <button onclick="openPlayerManagerForManager()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">👥 Kelola Pemain</button>
-                        <button onclick="exportPlayersExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">📤 Export Pemain</button>
-                        <button onclick="createMatchForTeam()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-black text-xs">⚽ Buat Match</button>
-                    </div>
-                </div>
-
-                <!-- PLAYER LIST -->
-                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
-                    <div class="flex justify-between items-center mb-2">
-                        <h4 class="text-xs font-bold text-slate-300">Daftar Pemain (<span id="mgr-player-count">0</span>)</h4>
-                        <input type="file" id="mgr-import-players-file" accept=".xlsx,.xls" class="hidden" onchange="importPlayersForManager(event)">
-                        <button onclick="document.getElementById('mgr-import-players-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded text-[10px] font-bold">📥 Import Excel</button>
-                    </div>
-                    <div id="mgr-player-list" class="max-h-64 overflow-y-auto space-y-1"></div>
-                </div>
-            </div>
-
-            <!-- STEP 3: MATCH TIM INI -->
-            <div id="mgr-team-matches" class="hidden bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">2️⃣ JADWAL MATCH TIM INI</h3>
-                <div id="mgr-match-list" class="max-h-64 overflow-y-auto space-y-2"></div>
-                <div class="pt-2 border-t border-slate-700 flex gap-2">
-                    <button onclick="createMatchForTeam()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-black text-xs">➕ Buat Match Baru</button>
-                    <button onclick="loadSelectedMatchForManager()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-black text-xs" disabled id="mgr-btn-load-match">📋 Load ke Scoring</button>
-                </div>
-            </div>
-
-            <!-- STEP 4: SIAP BROADCAST -->
-            <div id="mgr-broadcast-ready" class="hidden bg-slate-950/50 p-4 rounded-xl border border-emerald-500/30 space-y-3">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">3️⃣ SIAP BROADCAST</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
-                        <div class="text-slate-400">Tim Home</div>
-                        <div id="mgr-bc-home" class="font-bold text-amber-400">-</div>
-                    </div>
-                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
-                        <div class="text-slate-400">Tim Away</div>
-                        <div id="mgr-bc-away" class="font-bold text-cyan-400">-</div>
-                    </div>
-                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
-                        <div class="text-slate-400">Babak</div>
-                        <div id="mgr-bc-round" class="font-bold text-white">-</div>
-                    </div>
-                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
-                        <div class="text-slate-400">Match</div>
-                        <div id="mgr-bc-title" class="font-bold text-white">-</div>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    <button onclick="loadMatchToScoring()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-3 rounded-xl font-black text-sm shadow-lg">🚀 LOAD KE SCORING PANEL</button>
-                    <button onclick="openOverlayStrategy()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">📋 Buka Strategi</button>
-                    <button onclick="openOverlayVersus()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">🏟️ Buka Versus</button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 2. MANAJEMEN TIM, PEMAIN & JADWAL MATCH -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <div class="flex flex-wrap justify-between items-center gap-2">
                 <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400">2. Manajemen Tim, Daftar Pemain & Jadwal Match</h2>
@@ -650,15 +533,55 @@
 
             <div id="scoring-area"></div>
 
-            <!-- KONTROL KARTU KUNING & KARTU MERAH -->
-            <div id="card-control-box" class="bg-slate-950 p-4 rounded-xl border border-rose-500/40 space-y-3">
-                <div class="flex flex-wrap justify-between items-center gap-2">
-                    <span class="text-xs font-black uppercase text-amber-400">🟨🟥 Kartu Kuning & Kartu Merah</span>
-                    <div id="red_card_status" class="hidden text-xs font-mono font-black bg-rose-600 text-white px-2.5 py-1 rounded animate-pulse">
-                        Hukuman Merah: 02:00
+            <!-- PENCETAK GOAL (Multiple per Team) -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-amber-500/40 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">⚽ Pencetak Goal (Per Tim)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Home Goal Scorers -->
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700 space-y-2">
+                        <label class="text-xs font-bold text-amber-400">Tim Home</label>
+                        <div id="home_goal_scorers_list" class="space-y-1 max-h-32 overflow-y-auto">
+                            <div class="text-center text-slate-500 text-xs py-2">Belum ada goal</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2 pt-2">
+                            <select id="goal_scorer_side_home" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                                <option value="home">Tim Home</option>
+                            </select>
+                            <select id="goal_scorer_player_home" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                                <option value="">-- Pilih Pemain --</option>
+                            </select>
+                            <input type="number" id="goal_scorer_minute_home" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Menit" min="1" max="120" value="1">
+                            <input type="text" id="goal_scorer_assist_home" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Assist (opsional)">
+                        </div>
+                    </div>
+                    <!-- Away Goal Scorers -->
+                    <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700 space-y-2">
+                        <label class="text-xs font-bold text-cyan-400">Tim Away</label>
+                        <div id="away_goal_scorers_list" class="space-y-1 max-h-32 overflow-y-auto">
+                            <div class="text-center text-slate-500 text-xs py-2">Belum ada goal</div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-2 pt-2">
+                            <select id="goal_scorer_side_away" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                                <option value="away">Tim Away</option>
+                            </select>
+                            <select id="goal_scorer_player_away" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                                <option value="">-- Pilih Pemain --</option>
+                            </select>
+                            <input type="number" id="goal_scorer_minute_away" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Menit" min="1" max="120" value="1">
+                            <input type="text" id="goal_scorer_assist_away" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Assist (opsional)">
+                        </div>
                     </div>
                 </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="addGoalScorer('home')" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-black text-xs flex-1">➕ Tambah Goal Home</button>
+                    <button onclick="addGoalScorer('away')" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-black text-xs flex-1">➕ Tambah Goal Away</button>
+                    <button onclick="triggerGoalScorers()" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-black text-xs">📺 Tampilkan Goal Scorers</button>
+                </div>
+            </div>
 
+            <!-- KONTROL KARTU KUNING & KARTU MERAH (No Penalty Timer) -->
+            <div id="card-control-box" class="bg-slate-950 p-4 rounded-xl border border-rose-500/40 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">🟨🟥 Kartu Kuning & Kartu Merah</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
                     <select id="card_side" onchange="updateCardPlayerOptions()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-bold text-white">
                         <option value="home">Tim Home</option>
@@ -670,7 +593,7 @@
                     <input type="text" id="card_manual_input" placeholder="Atau ketik: #10 NAMA PEMAIN" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
                     <div class="flex gap-2">
                         <button onclick="issueCard('yellow')" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 py-2 rounded-lg font-black text-xs">🟨 Kuning</button>
-                        <button onclick="issueCard('red')" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg font-black text-xs">🟥 Merah (+2m)</button>
+                        <button onclick="issueCard('red')" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2 rounded-lg font-black text-xs">🟥 Merah</button>
                     </div>
                 </div>
 
@@ -789,51 +712,29 @@
                 <button onclick="toggleLT(false)" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">Sembunyikan LT</button>
                 <button onclick="triggerStinger()" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-bold text-xs ml-auto">⚡ Picu Stinger</button>
             </div>
-        </section>
+</section>
 
-        <!-- 5. OVERLAY TAMBAHAN (GOAL SCORER, KARTU KUNING, STRATEGI, VERSUS) -->
+        <!-- 5. OVERLAY TAMBAHAN (GOAL SCORERS, STRATEGI, VERSUS) -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-rose-400">5. Overlay Tambahan</h2>
             
-            <!-- Goal Scorer -->
+            <!-- Goal Scorers (Multiple) -->
             <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">⚽ Goal Scorer Overlay</h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <select id="goal_scorer_side" onchange="updateGoalScorerPlayers()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-                        <option value="home">Tim Home</option>
-                        <option value="away">Tim Away</option>
-                    </select>
-                    <select id="goal_scorer_player" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-                        <option value="">-- Pilih Pemain --</option>
-                    </select>
-                    <input type="number" id="goal_scorer_minute" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Menit" min="1" max="120" value="1">
-                    <input type="text" id="goal_scorer_assist" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Assist (opsional)">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">⚽ Goal Scorers Overlay (Multiple)</h3>
+                <p class="text-[10px] text-slate-400">Goal scorers sudah diatur di Section 3 (Pencetak Goal). Tombol ini menampilkan daftar semua pencetak goal.</p>
+                <div class="flex gap-2">
+                    <button onclick="triggerGoalScorers()" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-black text-xs">📺 Tampilkan Goal Scorers</button>
                 </div>
-                <button onclick="triggerGoalScorer()" class="bg-amber-600 hover:bg-amber-500 w-full py-2 rounded-lg font-black text-xs">📺 Tampilkan Goal Scorer</button>
-            </div>
-
-            <!-- Yellow Card -->
-            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
-                <h3 class="text-xs font-bold uppercase tracking-wider text-yellow-400">🟨 Kartu Kuning Overlay (Di Bawah Skor)</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <select id="yellow_card_side" onchange="updateYellowCardPlayers()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-                        <option value="home">Tim Home</option>
-                        <option value="away">Tim Away</option>
-                    </select>
-                    <select id="yellow_card_player" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
-                        <option value="">-- Pilih Pemain --</option>
-                    </select>
-                    <span id="yellow_card_team_display" class="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300">Tim: -</span>
-                </div>
-                <button onclick="triggerYellowCard()" class="bg-yellow-500 hover:bg-yellow-400 text-slate-950 w-full py-2 rounded-lg font-black text-xs">📺 Tampilkan Kartu Kuning</button>
             </div>
 
             <!-- Team Strategy -->
             <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-violet-400">📋 Team Strategy Overlay</h3>
                 <div class="flex flex-wrap gap-3">
-                    <button onclick="showTeamStrategyOverlay()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-bold text-xs">📋 Tampilkan Strategi</button>
-                    <button onclick="hideTeamStrategyOverlay()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">✕ Sembunyikan</button>
+                    <button onclick="showTeamStrategyOverlay()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-bold text-xs">📋 Tampilkan Strategi (Full)</button>
+                    <button onclick="showStrategyIcon('home')" class="bg-violet-500 hover:bg-violet-400 px-4 py-2 rounded-lg font-bold text-xs">📍 Ikon Strategi Home</button>
+                    <button onclick="showStrategyIcon('away')" class="bg-cyan-500 hover:bg-cyan-400 px-4 py-2 rounded-lg font-bold text-xs">📍 Ikon Strategi Away</button>
+                    <button onclick="hideTeamStrategyOverlay()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">✕ Sembunyikan Full</button>
                 </div>
             </div>
 
@@ -841,8 +742,8 @@
             <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400">🏟️ Team List & Versus Overlay</h3>
                 <div class="flex flex-wrap gap-3">
-                    <button onclick="showTeamVersusOverlay()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-bold text-xs">🏟️ Tampilkan Versus</button>
-                    <button onclick="hideTeamVersusOverlay()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">✕ Sembunyikan</button>
+                    <button onclick="showTeamVersusOverlay()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">🏟️ Tampilkan Versus</button>
+                    <button onclick="hideTeamVersusOverlay()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-black text-xs">✕ Sembunyikan</button>
                 </div>
             </div>
         </section>
@@ -1199,27 +1100,12 @@
                 timestamp: Date.now()
             };
 
-            if (color === 'red') {
-                extraObj.red_penalty_active = true;
-                extraObj.red_penalty_team = teamName;
-                extraObj.red_penalty_seconds = 120;
-                extraObj.red_started_at = (localTimerStatus === 'running') ? Date.now() : null;
-                extraObj.red_penalty_timer_started_at = Date.now();
-                liveRedRemain = 120;
-                updateRedPenaltyUI();
-            }
-
             document.getElementById('card_manual_input').value = '';
             saveChanges();
         }
 
         function clearRedPenalty() {
-            extraObj.red_penalty_active = false;
-            extraObj.red_penalty_seconds = 120;
-            extraObj.red_started_at = null;
-            extraObj.red_penalty_timer_started_at = null;
-            liveRedRemain = 120;
-            updateRedPenaltyUI();
+            extraObj.card_event = null;
             saveChanges();
         }
 
@@ -3073,28 +2959,7 @@ function loadSelectedMatch(idx) {
             });
         }
 
-        function triggerGoalScorer() {
-            const playerData = document.getElementById('goal_scorer_player').value;
-            const minute = parseInt(document.getElementById('goal_scorer_minute').value) || 1;
-            const assist = document.getElementById('goal_scorer_assist').value.trim();
-            
-            if (!playerData) return alert('Pilih pemain pencetak gol!');
-            
-            const player = JSON.parse(playerData);
-            const side = document.getElementById('goal_scorer_side').value;
-            const teamName = side === 'home' ? (stateData.home_name || 'HOME') : (stateData.away_name || 'AWAY');
-            
-            extraObj.goal_scorer_event = {
-                name: player.name,
-                team: teamName,
-                minute: minute,
-                assist: assist,
-                timestamp: Date.now()
-            };
-            saveChanges();
-        }
-
-        function triggerYellowCard() {
+function triggerYellowCard() {
             const playerData = document.getElementById('yellow_card_player').value;
             
             if (!playerData) return alert('Pilih pemain yang dapat kartu kuning!');
@@ -3109,6 +2974,114 @@ function loadSelectedMatch(idx) {
                 team: teamName,
                 timestamp: Date.now()
             };
+            saveChanges();
+        }
+
+        // ==================== NEW OVERLAY TRIGGERS ====================
+        function addGoalScorer(side) {
+            const playerSelect = document.getElementById(`goal_scorer_player_${side}`);
+            const minuteInput = document.getElementById(`goal_scorer_minute_${side}`);
+            const assistInput = document.getElementById(`goal_scorer_assist_${side}`);
+            
+            const playerData = playerSelect.value;
+            const minute = parseInt(minuteInput.value) || 1;
+            const assist = assistInput.value.trim();
+            
+            if (!playerData) return alert('Pilih pemain pencetak gol!');
+            
+            const player = JSON.parse(playerData);
+            const teamName = side === 'home' ? (stateData.home_name || 'HOME') : (stateData.away_name || 'AWAY');
+            
+            const scorer = {
+                name: player.name,
+                number: player.number || '',
+                minute: minute,
+                assist: assist
+            };
+            
+            if (!extraObj.goal_scorers) extraObj.goal_scorers = { home: [], away: [] };
+            extraObj.goal_scorers[side].push(scorer);
+            
+            // Update display list
+            const listEl = document.getElementById(`${side}_goal_scorers_list`);
+            if (listEl) {
+                if (listEl.querySelector('.text-center')) listEl.innerHTML = '';
+                const div = document.createElement('div');
+                div.className = 'bg-slate-900/50 p-1.5 rounded border border-slate-700/50 flex items-center justify-between gap-2 text-xs';
+                div.innerHTML = `
+                    <span class="text-amber-400 font-bold">#${player.number || ''} ${player.name}</span>
+                    <span class="text-white/70">Menit ${minute}${assist ? ` (Asist: ${assist})` : ''}</span>
+                `;
+                listEl.appendChild(div);
+            }
+            
+            minuteInput.value = 1;
+            assistInput.value = '';
+            saveChanges();
+        }
+
+        function triggerGoalScorers() {
+            if (!extraObj.goal_scorers || (!extraObj.goal_scorers.home?.length && !extraObj.goal_scorers.away?.length)) {
+                return alert('Belum ada pencetak goal!');
+            }
+            
+            const allScorers = [
+                ...(extraObj.goal_scorers.home || []).map(s => ({ ...s, team: stateData.home_name || 'HOME', side: 'home' })),
+                ...(extraObj.goal_scorers.away || []).map(s => ({ ...s, team: stateData.away_name || 'AWAY', side: 'away' }))
+            ];
+            
+            extraObj.goal_scorers_event = {
+                scorers: allScorers,
+                team: 'BOTH',
+                minute: Math.max(...allScorers.map(s => s.minute)),
+                assists: allScorers.filter(s => s.assist).map(s => s.assist),
+                timestamp: Date.now()
+            };
+            saveChanges();
+        }
+
+        function triggerRedCard() {
+            const playerData = document.getElementById('card_manual_input').value.trim();
+            const dropVal = document.getElementById('card_player_dropdown').value;
+            const playerLabel = playerData || dropVal || 'PEMAIN';
+            const side = document.getElementById('card_side').value;
+            const teamName = side === 'home' ? (stateData.home_name || 'HOME') : (stateData.away_name || 'AWAY');
+            
+            if (!playerLabel || playerLabel === 'PEMAIN') return alert('Pilih pemain untuk kartu merah!');
+            
+            extraObj.red_card_event = {
+                side: side,
+                player: playerLabel,
+                team: teamName,
+                timestamp: Date.now()
+            };
+            saveChanges();
+        }
+
+        function showStrategyIcon(side) {
+            extraObj.show_strategy_icon = { side: side, timestamp: Date.now() };
+            saveChanges();
+        }
+
+        function showTeamStrategyOverlay() {
+            extraObj.show_strategy_overlay = true;
+            extraObj.strategy_overlay_timestamp = Date.now();
+            saveChanges();
+        }
+
+        function hideTeamStrategyOverlay() {
+            extraObj.show_strategy_overlay = false;
+            saveChanges();
+        }
+
+        function showTeamVersusOverlay() {
+            extraObj.show_versus_overlay = true;
+            extraObj.versus_overlay_timestamp = Date.now();
+            saveChanges();
+        }
+
+        function hideTeamVersusOverlay() {
+            extraObj.show_versus_overlay = false;
             saveChanges();
         }
 

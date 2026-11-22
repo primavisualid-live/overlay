@@ -324,39 +324,39 @@
         <div id="stinger-event-title" class="text-6xl font-black tracking-widest uppercase text-white drop-shadow-lg">LIVE BROADCAST</div>
     </div>
 
-    <!-- GOAL SCORER OVERLAY -->
-    <div id="goal-scorer-overlay" class="hidden fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
+    <!-- GOAL SCORERS OVERLAY (Multiple Players) -->
+    <div id="goal-scorers-overlay" class="hidden fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
         <div class="bg-gradient-to-r from-amber-500 via-amber-600 to-slate-900 rounded-3xl shadow-2xl border-2 border-amber-400 p-8 max-w-2xl mx-4 text-center animate-fade-in-up">
             <div class="text-[14px] font-black uppercase tracking-widest text-amber-300 mb-2">⚽ GOAL DICETAK!</div>
-            <div id="goal-scorer-name" class="text-5xl font-black text-white mb-1">NAMA PEMAIN</div>
-            <div id="goal-scorer-team" class="text-2xl font-bold text-amber-300 mb-2">NAMA TIM</div>
-            <div id="goal-scorer-minute" class="text-xl font-mono text-white/80">Menit ke-00</div>
-            <div class="mt-6 flex justify-center gap-4">
-                <div class="bg-black/30 px-4 py-2 rounded-full">
-                    <span class="text-xs font-bold text-amber-300">Assist:</span>
-                    <span id="goal-scorer-assist" class="ml-2 text-white">-</span>
-                </div>
+            <div id="goal-scorers-list" class="space-y-2 mb-4"></div>
+            <div id="goal-scorers-assist" class="bg-black/30 px-4 py-2 rounded-full text-sm">
+                <span class="text-xs font-bold text-amber-300">Assist:</span>
+                <span id="goal-scorers-assist-names" class="ml-2 text-white">-</span>
             </div>
         </div>
     </div>
 
-    <!-- YELLOW CARD OVERLAY (Below Score) -->
-    <div id="yellow-card-overlay" class="hidden fixed bottom-28 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
-        <div id="yellow-card-home" class="hidden bg-yellow-500/90 border-2 border-yellow-400 rounded-xl px-6 py-3 flex items-center gap-3 shadow-xl animate-fade-in-up">
-            <span class="text-3xl">🟨</span>
-            <div class="text-left">
-                <div class="text-xs font-bold uppercase tracking-wide text-yellow-200">KARTU KUNING</div>
-                <div id="yellow-card-home-player" class="text-xl font-black text-white">#10 NAMA</div>
-                <div id="yellow-card-home-team" class="text-sm text-yellow-200">TIM</div>
+    <!-- CARD OVERLAY (Below Score - Yellow & Red) -->
+    <div id="card-overlay" class="hidden fixed bottom-28 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
+        <div id="card-home" class="hidden flex items-center gap-3 shadow-xl animate-fade-in-up">
+            <div id="card-home-bg" class="bg-yellow-500/90 border-2 border-yellow-400 rounded-xl px-6 py-3 flex items-center gap-3">
+                <span class="text-3xl" id="card-home-icon">🟨</span>
+                <div class="text-left">
+                    <div class="text-xs font-bold uppercase tracking-wide text-yellow-200" id="card-home-label">KARTU KUNING</div>
+                    <div id="card-home-player" class="text-xl font-black text-white">#10 NAMA</div>
+                    <div id="card-home-team" class="text-sm text-yellow-200">TIM</div>
+                </div>
             </div>
         </div>
-        <div id="yellow-card-away" class="hidden bg-yellow-500/90 border-2 border-yellow-400 rounded-xl px-6 py-3 flex items-center gap-3 shadow-xl animate-fade-in-up">
-            <div class="text-right">
-                <div class="text-xs font-bold uppercase tracking-wide text-yellow-200">KARTU KUNING</div>
-                <div id="yellow-card-away-player" class="text-xl font-black text-white">#10 NAMA</div>
-                <div id="yellow-card-away-team" class="text-sm text-yellow-200">TIM</div>
+        <div id="card-away" class="hidden flex items-center gap-3 shadow-xl animate-fade-in-up">
+            <div id="card-away-bg" class="bg-yellow-500/90 border-2 border-yellow-400 rounded-xl px-6 py-3 flex items-center gap-3">
+                <div class="text-right">
+                    <div class="text-xs font-bold uppercase tracking-wide text-yellow-200" id="card-away-label">KARTU KUNING</div>
+                    <div id="card-away-player" class="text-xl font-black text-white">#10 NAMA</div>
+                    <div id="card-away-team" class="text-sm text-yellow-200">TIM</div>
+                </div>
+                <span class="text-3xl" id="card-away-icon">🟨</span>
             </div>
-            <span class="text-3xl">🟨</span>
         </div>
     </div>
 
@@ -546,8 +546,11 @@
         let lastStinger = 0;
         let lastCardTs = 0;
         let lastGoalScorerTs = 0;
+        let lastGoalScorersTs = 0;
         let lastYellowCardTs = 0;
+        let lastRedCardTs = 0;
         let lastStrategyOverlayTs = 0;
+        let lastStrategyIconTs = 0;
         let lastVersusOverlayTs = 0;
         let timerSeconds = 1200;
         let timerStatus = 'stopped';
@@ -942,17 +945,57 @@
 // Yellow Card Overlay
             if (extra.yellow_card_event && extra.yellow_card_event.timestamp && extra.yellow_card_event.timestamp !== lastYellowCardTs) {
                 lastYellowCardTs = extra.yellow_card_event.timestamp;
-                showYellowCard(
+                showCard(
                     extra.yellow_card_event.side,
                     extra.yellow_card_event.player,
-                    extra.yellow_card_event.team
+                    extra.yellow_card_event.team,
+                    'yellow'
                 );
             }
 
-            // Team Strategy Overlay
+            // Red Card Overlay
+            if (extra.red_card_event && extra.red_card_event.timestamp && extra.red_card_event.timestamp !== lastRedCardTs) {
+                lastRedCardTs = extra.red_card_event.timestamp;
+                showCard(
+                    extra.red_card_event.side,
+                    extra.red_card_event.player,
+                    extra.red_card_event.team,
+                    'red'
+                );
+            }
+
+            // Goal Scorers Overlay
+            if (extra.goal_scorers_event && extra.goal_scorers_event.timestamp && extra.goal_scorers_event.timestamp !== lastGoalScorersTs) {
+                lastGoalScorersTs = extra.goal_scorers_event.timestamp;
+                showGoalScorers(
+                    extra.goal_scorers_event.scorers,
+                    extra.goal_scorers_event.team,
+                    extra.goal_scorers_event.minute,
+                    extra.goal_scorers_event.assists
+                );
+            }
+
+            // Backward compatibility - Goal Scorer
+            if (extra.goal_scorer_event && extra.goal_scorer_event.timestamp && extra.goal_scorer_event.timestamp !== lastGoalScorerTs) {
+                lastGoalScorerTs = extra.goal_scorer_event.timestamp;
+                showGoalScorer(
+                    extra.goal_scorer_event.name,
+                    extra.goal_scorer_event.team,
+                    extra.goal_scorer_event.minute,
+                    extra.goal_scorer_event.assist
+                );
+            }
+
+            // Team Strategy Overlay (Full)
             if (extra.show_strategy_overlay && extra.strategy_overlay_timestamp && extra.strategy_overlay_timestamp !== lastStrategyOverlayTs) {
                 lastStrategyOverlayTs = extra.strategy_overlay_timestamp;
                 showTeamStrategyOverlay();
+            }
+
+            // Strategy Icon Overlay (TV Style)
+            if (extra.show_strategy_icon && extra.strategy_icon_timestamp && extra.strategy_icon_timestamp !== lastStrategyIconTs) {
+                lastStrategyIconTs = extra.strategy_icon_timestamp;
+                showStrategyIcon(extra.show_strategy_icon.side);
             }
 
             // Team Versus Overlay
@@ -1083,44 +1126,123 @@
         }
     </script>
 
-    <!-- NEW OVERLAY FUNCTIONS -->
+<!-- NEW OVERLAY FUNCTIONS -->
     <script>
-        // ==================== GOAL SCORER OVERLAY ====================
-        function showGoalScorer(scorerName, teamName, minute, assistName = '') {
-            const overlay = document.getElementById('goal-scorer-overlay');
-            document.getElementById('goal-scorer-name').innerText = scorerName || 'PEMAIN';
-            document.getElementById('goal-scorer-team').innerText = teamName || 'TIM';
-            document.getElementById('goal-scorer-minute').innerText = `Menit ke-${minute || 0}`;
-            document.getElementById('goal-scorer-assist').innerText = assistName || '-';
-            overlay.classList.remove('hidden');
-            setTimeout(() => overlay.classList.add('hidden'), 6000);
-        }
-
-        // ==================== YELLOW CARD OVERLAY ====================
-        function showYellowCard(side, playerLabel, teamName) {
-            const overlay = document.getElementById('yellow-card-overlay');
-            const cardEl = document.getElementById(`yellow-card-${side}`);
-            const playerEl = document.getElementById(`yellow-card-${side}-player`);
-            const teamEl = document.getElementById(`yellow-card-${side}-team`);
+        // ==================== GOAL SCORERS OVERLAY (Multiple Players) ====================
+        function showGoalScorers(scorers, teamName, minute, assistNames = []) {
+            const overlay = document.getElementById('goal-scorers-overlay');
+            const listEl = document.getElementById('goal-scorers-list');
+            const assistEl = document.getElementById('goal-scorers-assist-names');
             
-            if (cardEl && playerEl && teamEl) {
-                playerEl.innerText = playerLabel || '#10 PEMAIN';
-                teamEl.innerText = teamName || 'TIM';
-                overlay.classList.remove('hidden');
-                cardEl.classList.remove('hidden');
-                setTimeout(() => {
-                    cardEl.classList.add('hidden');
-                    // Check if other card is also hidden
-                    const otherSide = side === 'home' ? 'away' : 'home';
-                    const otherCard = document.getElementById(`yellow-card-${otherSide}`);
-                    if (otherCard && otherCard.classList.contains('hidden')) {
-                        overlay.classList.add('hidden');
-                    }
-                }, 5000);
-            }
+            if (!scorers || scorers.length === 0) return;
+            
+            // Handle single scorer (backward compatibility)
+            const scorersArray = Array.isArray(scorers) ? scorers : [scorers];
+            const assistsArray = Array.isArray(assistNames) ? assistNames : [assistNames];
+            
+            listEl.innerHTML = scorersArray.map((s, i) => `
+                <div class="bg-black/30 px-4 py-2 rounded-xl flex items-center justify-center gap-4">
+                    <span class="text-3xl font-black text-white">${s.name || 'PEMAIN'}</span>
+                    <span class="text-amber-300 text-lg">#${s.number || ''}</span>
+                    <span class="text-amber-400 text-sm">${teamName || 'TIM'}</span>
+                    <span class="text-white/80 text-sm">Menit ${s.minute || minute || 0}</span>
+                </div>
+            `).join('');
+            
+            assistEl.innerText = assistsArray.filter(Boolean).join(', ') || '-';
+            
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('hidden'), 8000);
         }
 
-        // ==================== TEAM STRATEGY OVERLAY ====================
+        // Backward compatibility
+        function showGoalScorer(scorerName, teamName, minute, assistName = '') {
+            showGoalScorers([{ name: scorerName, minute: minute }], teamName, minute, [assistName]);
+        }
+
+        // ==================== CARD OVERLAY (Below Score - Yellow & Red) ====================
+        function showCard(side, playerLabel, teamName, color = 'yellow') {
+            const cardEl = document.getElementById(`card-${side}`);
+            const cardBg = document.getElementById(`card-${side}-bg`);
+            const iconEl = document.getElementById(`card-${side}-icon`);
+            const labelEl = document.getElementById(`card-${side}-label`);
+            const playerEl = document.getElementById(`card-${side}-player`);
+            const teamEl = document.getElementById(`card-${side}-team`);
+            const overlay = document.getElementById('card-overlay');
+            
+            if (!cardEl || !playerEl || !teamEl) return;
+            
+            const isRed = color === 'red';
+            const icon = isRed ? '🟥' : '🟨';
+            const bgColor = isRed ? 'bg-rose-500/90 border-rose-400' : 'bg-yellow-500/90 border-yellow-400';
+            const textColor = isRed ? 'text-rose-200' : 'text-yellow-200';
+            const label = isRed ? 'KARTU MERAH' : 'KARTU KUNING';
+            
+            cardBg.className = `rounded-xl px-6 py-3 flex items-center gap-3 shadow-xl animate-fade-in-up ${bgColor} border-2`;
+            iconEl.innerText = icon;
+            labelEl.innerText = label;
+            labelEl.className = `text-xs font-bold uppercase tracking-wide ${textColor}`;
+            playerEl.innerText = playerLabel || '#10 PEMAIN';
+            teamEl.innerText = teamName || 'TIM';
+            teamEl.className = `text-sm ${textColor}`;
+            
+            overlay.classList.remove('hidden');
+            cardEl.classList.remove('hidden');
+            
+            setTimeout(() => {
+                cardEl.classList.add('hidden');
+                const otherSide = side === 'home' ? 'away' : 'home';
+                const otherCard = document.getElementById(`card-${otherSide}`);
+                if (otherCard && otherCard.classList.contains('hidden')) {
+                    overlay.classList.add('hidden');
+                }
+            }, 5000);
+        }
+
+        // Backward compatibility
+        function showYellowCard(side, playerLabel, teamName) {
+            showCard(side, playerLabel, teamName, 'yellow');
+        }
+
+        function showRedCard(side, playerLabel, teamName) {
+            showCard(side, playerLabel, teamName, 'red');
+        }
+
+        // ==================== STRATEGY ICON OVERLAY (TV Style) ====================
+        function showStrategyIcon(side) {
+            // Create floating strategy icon near team name
+            const overlay = document.createElement('div');
+            overlay.className = 'fixed z-40 pointer-events-none animate-fade-in-up';
+            overlay.id = `strategy-icon-${side}`;
+            
+            const teamName = side === 'home' ? (currentState.home_name || 'HOME') : (currentState.away_name || 'AWAY');
+            const teamColor = side === 'home' ? (currentState.home_color || '#f59e0b') : (currentState.away_color || '#06b6d4');
+            
+            overlay.style.cssText = side === 'home' 
+                ? 'bottom-20 left-4' 
+                : 'bottom-20 right-4';
+            
+            overlay.innerHTML = `
+                <div class="bg-black/80 border-2 rounded-xl p-3 shadow-xl flex items-center gap-3" style="border-color: ${teamColor}">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-xl" style="background: ${teamColor}">📋</div>
+                    <div class="text-white text-sm font-bold whitespace-nowrap">
+                        <div>${teamName}</div>
+                        <div class="text-xs text-amber-300">Strategi Aktif</div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            setTimeout(() => {
+                overlay.classList.add('animate-fade-in-up');
+                overlay.style.opacity = '0';
+                overlay.style.transform = 'translateY(20px)';
+                setTimeout(() => overlay.remove(), 300);
+            }, 4000);
+        }
+
+        // ==================== TEAM STRATEGY OVERLAY (Full) ====================
         function showTeamStrategyOverlay() {
             const overlay = document.getElementById('team-strategy-overlay');
             overlay.classList.remove('hidden');
@@ -1235,7 +1357,7 @@
             return 'PLR';
         }
 
-        // ==================== TEAM VERSUS OVERLAY ====================
+        // ==================== TEAM VERSUS OVERLAY (With Players) ====================
         function showTeamVersusOverlay() {
             const overlay = document.getElementById('team-versus-overlay');
             overlay.classList.remove('hidden');
