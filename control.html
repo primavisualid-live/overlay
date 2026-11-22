@@ -317,6 +317,7 @@
                     <select id="select_match_item" onchange="loadSelectedMatch(this.value)" class="w-full bg-slate-950 border border-amber-500/60 rounded-lg px-3 py-2 text-sm text-white font-bold">
                         <option value="">-- Pilih Match / Pertandingan --</option>
                     </select>
+                    <button onclick="clearSelectedMatch()" class="mt-1 w-full bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs py-1.5 rounded-lg font-bold">🗑️ Hapus Pilihan Match (Reset)</button>
                 </div>
             </div>
 
@@ -1153,6 +1154,18 @@
             initStylePresets();
             switchSport(stateData.sport_type || 'futsal', false);
             updateLivePreview();
+
+            // Auto-load previously selected match if exists
+            if (extraObj.selected_match_id) {
+                const savedMatch = dbMatches.find(m => m.id === extraObj.selected_match_id);
+                if (savedMatch) {
+                    // Find index in filtered matches
+                    const idx = filteredMatchesCache.findIndex(m => m.id === extraObj.selected_match_id);
+                    if (idx >= 0) {
+                        loadSelectedMatch(idx);
+                    }
+                }
+            }
         }
 
         function updateObsLiveBadge(isLive) {
@@ -2344,8 +2357,44 @@ function loadSelectedMatch(idx) {
                 renderPanel(stateData.sport_type);
                 updateGoalScorerPlayers();
                 updateYellowCardPlayers();
+
+                // Save selected match ID for persistence
+                extraObj.selected_match_id = match.id;
+                extraObj.selected_match_timestamp = Date.now();
                 saveChanges();
             }
+        }
+
+        function clearSelectedMatch() {
+            if (!confirm('Hapus pilihan match yang tersimpan?')) return;
+            extraObj.selected_match_id = null;
+            extraObj.selected_match_timestamp = null;
+            document.getElementById('select_match_item').value = '';
+            document.getElementById('home_name_display').innerText = '-';
+            document.getElementById('away_name_display').innerText = '-';
+            document.getElementById('home_name').value = 'HOME';
+            document.getElementById('away_name').value = 'AWAY';
+            document.getElementById('match_name').value = '';
+            stateData.home_score = 0;
+            stateData.away_score = 0;
+            extraObj.home_foul = 0;
+            extraObj.away_foul = 0;
+            extraObj.home_to_used = false;
+            extraObj.away_to_used = false;
+            extraObj.home_players = [];
+            extraObj.away_players = [];
+            document.getElementById('home_players_text').value = '';
+            document.getElementById('away_players_text').value = '';
+            document.getElementById('home_player_count').innerText = '0';
+            document.getElementById('away_player_count').innerText = '0';
+            onTeamNameChanged('home');
+            onTeamNameChanged('away');
+            updateTimeoutUI();
+            updateRedPenaltyUI();
+            renderPanel('futsal');
+            updateGoalScorerPlayers();
+            updateYellowCardPlayers();
+            saveChanges();
         }
 
         // ==================== SCOREBOARD STYLE SYSTEM ====================
