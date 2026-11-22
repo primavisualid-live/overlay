@@ -669,7 +669,103 @@
             </div>
         </section>
 
-        <!-- 4. LOWER THIRD & STINGER -->
+        <!-- 4. SCOREBOARD STYLE -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-pink-400">4. Scoreboard Style & Tema</h2>
+            
+            <!-- Style Presets -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">Preset Tema</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2" id="style-preset-buttons"></div>
+            </div>
+
+            <!-- Custom Style Builder -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-4" id="custom-style-builder">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-violet-400">🎨 Custom Style Builder</h3>
+                    <button onclick="toggleCustomStyleBuilder()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-black text-[10px]">✕ Tutup</button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <!-- Background -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400">Background Scorebug</label>
+                        <input type="color" id="style-bg-main" class="w-full h-10 rounded cursor-pointer">
+                        <input type="color" id="style-bg-alt" class="w-full h-10 rounded cursor-pointer">
+                        <label class="block text-[10px] font-bold text-slate-400">Opacity</label>
+                        <input type="range" id="style-bg-opacity" min="0" max="100" value="95" class="w-full">
+                    </div>
+                    
+                    <!-- Text Colors -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400">Timer Color</label>
+                        <input type="color" id="style-timer-color" class="w-full h-10 rounded cursor-pointer">
+                        <label class="block text-[10px] font-bold text-slate-400">Score Color Home</label>
+                        <input type="color" id="style-score-home" class="w-full h-10 rounded cursor-pointer">
+                        <label class="block text-[10px] font-bold text-slate-400">Score Color Away</label>
+                        <input type="color" id="style-score-away" class="w-full h-10 rounded cursor-pointer">
+                    </div>
+                    
+                    <!-- Team Colors -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400">Accent Color</label>
+                        <input type="color" id="style-accent" class="w-full h-10 rounded cursor-pointer">
+                        <label class="block text-[10px] font-bold text-slate-400">Border Color</label>
+                        <input type="color" id="style-border" class="w-full h-10 rounded cursor-pointer">
+                        <label class="block text-[10px] font-bold text-slate-400">Font Family</label>
+                        <select id="style-font" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Poppins', sans-serif">Poppins</option>
+                            <option value="'Orbitron', sans-serif">Orbitron (Digital)</option>
+                            <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                            <option value="'Rajdhani', sans-serif">Rajdhani</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Layout Options -->
+                    <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400">Layout Style</label>
+                        <select id="style-layout" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" onchange="updateLayoutPreview()">
+                            <option value="tv-standard">TV Standard (Horizontal)</option>
+                            <option value="tv-compact">TV Compact</option>
+                            <option value="minimal">Minimal Clean</option>
+                            <option value="esports">Esports Style</option>
+                            <option value="retro">Retro 90s</option>
+                            <option value="modern-glass">Modern Glassmorphism</option>
+                        </select>
+                        <label class="block text-[10px] font-bold text-slate-400">Border Radius</label>
+                        <input type="range" id="style-radius" min="0" max="24" value="12" class="w-full">
+                        <label class="flex items-center gap-2 text-[10px] text-slate-400">
+                            <input type="checkbox" id="style-glow" class="w-4 h-4 accent-amber-500"> Glow Effect
+                        </label>
+                        <label class="flex items-center gap-2 text-[10px] text-slate-400">
+                            <input type="checkbox" id="style-show-fouls" class="w-4 h-4 accent-amber-500" checked> Show Fouls
+                        </label>
+                        <label class="flex items-center gap-2 text-[10px] text-slate-400">
+                            <input type="checkbox" id="style-show-timeouts" class="w-4 h-4 accent-amber-500" checked> Show Timeouts
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-700">
+                    <button onclick="applyCustomStyle()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">✨ Terapkan Custom Style</button>
+                    <button onclick="saveCustomStyle()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">💾 Simpan Custom Style</button>
+                    <button onclick="loadCustomStyle()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg font-black text-xs">📂 Load Custom Style</button>
+                    <button onclick="resetToPreset()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-black text-xs">↺ Reset ke Preset</button>
+                </div>
+            </div>
+
+            <!-- Style Actions -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="showCustomStyleBuilder()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">🎨 Buka Custom Builder</button>
+                <button onclick="exportStyle()" class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-lg font-black text-xs">📤 Export Style (JSON)</button>
+                <button onclick="importStyle()" class="bg-amber-600 hover:bg-amber-500 px-4 py-2 rounded-lg font-black text-xs">📥 Import Style</button>
+                <input type="file" id="import-style-file" accept=".json" class="hidden" onchange="importStyleFile(event)">
+            </div>
+        </section>
+
+        <!-- 5. LOWER THIRD & STINGER -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <h2 class="text-xs font-bold uppercase tracking-wider text-purple-400">4. Lower Third & Transisi Stinger</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1154,6 +1250,7 @@
             updateObsLiveBadge(Boolean(extraObj.obs_is_live));
 
             updateGoalAnimButtonUI();
+            initStylePresets();
             switchSport(stateData.sport_type || 'futsal', false);
             updateLivePreview();
         }
@@ -2337,8 +2434,227 @@
                 renderPanel(stateData.sport_type);
                 updateGoalScorerPlayers();
                 updateYellowCardPlayers();
-                saveChanges();
-            }
+saveChanges();
+        }
+
+        // ==================== SCOREBOARD STYLE SYSTEM ====================
+        let scoreboardStyles = {
+            presets: {
+                'tv-standard': {
+                    name: 'TV Standard',
+                    layout: 'tv-standard',
+                    bgMain: '#0f172a', bgAlt: '#1e293b', bgOpacity: 95,
+                    timerColor: '#ffffff', scoreHome: '#f59e0b', scoreAway: '#06b6d4',
+                    accent: '#f59e0b', border: '#334155', font: "'Inter', sans-serif",
+                    radius: 12, glow: false, showFouls: true, showTimeouts: true
+                },
+                'tv-compact': {
+                    name: 'TV Compact',
+                    layout: 'tv-compact',
+                    bgMain: '#020617', bgAlt: '#0f172a', bgOpacity: 98,
+                    timerColor: '#ffffff', scoreHome: '#fbbf24', scoreAway: '#22d3ee',
+                    accent: '#fbbf24', border: '#1e293b', font: "'Inter', sans-serif",
+                    radius: 8, glow: false, showFouls: true, showTimeouts: true
+                },
+                'minimal': {
+                    name: 'Minimal Clean',
+                    layout: 'minimal',
+                    bgMain: '#ffffff', bgAlt: '#f8fafc', bgOpacity: 90,
+                    timerColor: '#1e293b', scoreHome: '#ea580c', scoreAway: '#0284c7',
+                    accent: '#ea580c', border: '#e2e8f0', font: "'Inter', sans-serif",
+                    radius: 4, glow: false, showFouls: false, showTimeouts: false
+                },
+                'esports': {
+                    name: 'Esports Style',
+                    layout: 'esports',
+                    bgMain: '#0a0a0f', bgAlt: '#14141f', bgOpacity: 100,
+                    timerColor: '#00ff88', scoreHome: '#ff3366', scoreAway: '#00ccff',
+                    accent: '#00ff88', border: '#00ff88', font: "'Orbitron', sans-serif",
+                    radius: 0, glow: true, showFouls: true, showTimeouts: true
+                },
+                'retro': {
+                    name: 'Retro 90s',
+                    layout: 'retro',
+                    bgMain: '#1a1a2e', bgAlt: '#16213e', bgOpacity: 95,
+                    timerColor: '#00ff00', scoreHome: '#ff6b6b', scoreAway: '#4ecdc4',
+                    accent: '#ffe66d', border: '#ffe66d', font: "'Rajdhani', sans-serif",
+                    radius: 0, glow: true, showFouls: true, showTimeouts: true
+                },
+                'modern-glass': {
+                    name: 'Modern Glass',
+                    layout: 'modern-glass',
+                    bgMain: 'rgba(15, 23, 42, 0.8)', bgAlt: 'rgba(30, 41, 59, 0.8)', bgOpacity: 80,
+                    timerColor: '#ffffff', scoreHome: '#f59e0b', scoreAway: '#06b6d4',
+                    accent: '#ffffff', border: 'rgba(255,255,255,0.2)', font: "'Poppins', sans-serif",
+                    radius: 24, glow: false, showFouls: true, showTimeouts: true
+                }
+            },
+            current: 'tv-standard',
+            custom: {}
+        };
+
+        function initStylePresets() {
+            const container = document.getElementById('style-preset-buttons');
+            if (!container) return;
+            container.innerHTML = '';
+            Object.entries(scoreboardStyles.presets).forEach(([key, preset]) => {
+                const btn = document.createElement('button');
+                btn.className = `style-preset-btn p-3 rounded-lg border-2 text-center transition-all ${
+                    scoreboardStyles.current === key 
+                        ? 'border-pink-500 bg-pink-500/10' 
+                        : 'border-slate-700 hover:border-slate-600'
+                }`;
+                btn.onclick = () => applyPreset(key);
+                btn.innerHTML = `
+                    <div class="text-[10px] font-bold text-slate-400 mb-1">${preset.name}</div>
+                    <div class="w-full h-8 rounded border border-slate-600 flex items-center justify-center" style="background: ${preset.bgMain}">
+                        <span class="text-xs font-black" style="color: ${preset.timerColor}">20:00</span>
+                    </div>
+                `;
+                container.appendChild(btn);
+            });
+            // Load custom inputs with current preset values
+            loadPresetToCustomInputs(scoreboardStyles.current);
+        }
+
+        function applyPreset(key) {
+            if (!scoreboardStyles.presets[key]) return;
+            scoreboardStyles.current = key;
+            const preset = scoreboardStyles.presets[key];
+            extraObj.scoreboard_style = JSON.stringify(preset);
+            saveChanges();
+            initStylePresets();
+            alert(`Tema "${preset.name}" diterapkan!`);
+        }
+
+        function loadPresetToCustomInputs(key) {
+            const preset = scoreboardStyles.presets[key] || scoreboardStyles.presets['tv-standard'];
+            document.getElementById('style-bg-main').value = preset.bgMain;
+            document.getElementById('style-bg-alt').value = preset.bgAlt;
+            document.getElementById('style-bg-opacity').value = preset.bgOpacity;
+            document.getElementById('style-timer-color').value = preset.timerColor;
+            document.getElementById('style-score-home').value = preset.scoreHome;
+            document.getElementById('style-score-away').value = preset.scoreAway;
+            document.getElementById('style-accent').value = preset.accent;
+            document.getElementById('style-border').value = preset.border;
+            document.getElementById('style-font').value = preset.font;
+            document.getElementById('style-layout').value = preset.layout;
+            document.getElementById('style-radius').value = preset.radius;
+            document.getElementById('style-glow').checked = preset.glow;
+            document.getElementById('style-show-fouls').checked = preset.showFouls;
+            document.getElementById('style-show-timeouts').checked = preset.showTimeouts;
+        }
+
+        function showCustomStyleBuilder() {
+            document.getElementById('custom-style-builder').classList.remove('hidden');
+        }
+
+        function toggleCustomStyleBuilder() {
+            document.getElementById('custom-style-builder').classList.add('hidden');
+        }
+
+        function updateLayoutPreview() {
+            // Preview logic can be added here
+        }
+
+        function applyCustomStyle() {
+            const custom = {
+                name: 'Custom',
+                layout: document.getElementById('style-layout').value,
+                bgMain: document.getElementById('style-bg-main').value,
+                bgAlt: document.getElementById('style-bg-alt').value,
+                bgOpacity: parseInt(document.getElementById('style-bg-opacity').value),
+                timerColor: document.getElementById('style-timer-color').value,
+                scoreHome: document.getElementById('style-score-home').value,
+                scoreAway: document.getElementById('style-score-away').value,
+                accent: document.getElementById('style-accent').value,
+                border: document.getElementById('style-border').value,
+                font: document.getElementById('style-font').value,
+                radius: parseInt(document.getElementById('style-radius').value),
+                glow: document.getElementById('style-glow').checked,
+                showFouls: document.getElementById('style-show-fouls').checked,
+                showTimeouts: document.getElementById('style-show-timeouts').checked
+            };
+            scoreboardStyles.custom = custom;
+            scoreboardStyles.current = 'custom';
+            extraObj.scoreboard_style = JSON.stringify(custom);
+            saveChanges();
+            initStylePresets();
+            alert('Custom style diterapkan!');
+        }
+
+        function saveCustomStyle() {
+            const custom = {
+                name: 'Custom',
+                layout: document.getElementById('style-layout').value,
+                bgMain: document.getElementById('style-bg-main').value,
+                bgAlt: document.getElementById('style-bg-alt').value,
+                bgOpacity: parseInt(document.getElementById('style-bg-opacity').value),
+                timerColor: document.getElementById('style-timer-color').value,
+                scoreHome: document.getElementById('style-score-home').value,
+                scoreAway: document.getElementById('style-score-away').value,
+                accent: document.getElementById('style-accent').value,
+                border: document.getElementById('style-border').value,
+                font: document.getElementById('style-font').value,
+                radius: parseInt(document.getElementById('style-radius').value),
+                glow: document.getElementById('style-glow').checked,
+                showFouls: document.getElementById('style-show-fouls').checked,
+                showTimeouts: document.getElementById('style-show-timeouts').checked
+            };
+            scoreboardStyles.custom = custom;
+            localStorage.setItem('scoreboard_custom_style', JSON.stringify(custom));
+            alert('Custom style disimpan ke localStorage!');
+        }
+
+        function loadCustomStyle() {
+            const saved = localStorage.getItem('scoreboard_custom_style');
+            if (!saved) return alert('Tidak ada custom style tersimpan!');
+            const custom = JSON.parse(saved);
+            loadPresetToCustomInputs('custom');
+            scoreboardStyles.custom = custom;
+            scoreboardStyles.current = 'custom';
+            applyCustomStyle();
+        }
+
+        function resetToPreset() {
+            scoreboardStyles.current = 'tv-standard';
+            applyPreset('tv-standard');
+        }
+
+        function exportStyle() {
+            const style = scoreboardStyles.current === 'custom' ? scoreboardStyles.custom : scoreboardStyles.presets[scoreboardStyles.current];
+            const blob = new Blob([JSON.stringify(style, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `scoreboard_style_${scoreboardStyles.current}_${new Date().toISOString().slice(0,10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importStyle() {
+            document.getElementById('import-style-file').click();
+        }
+
+        function importStyleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const style = JSON.parse(e.target.result);
+                    scoreboardStyles.custom = style;
+                    scoreboardStyles.current = 'custom';
+                    loadPresetToCustomInputs('custom');
+                    applyCustomStyle();
+                    alert('Style diimport dan diterapkan!');
+                } catch(err) {
+                    alert('File style tidak valid!');
+                }
+            };
+            reader.readAsText(file);
+            document.getElementById('import-style-file').value = '';
+        }
         }
 
         function toggleScreenFlip() {
