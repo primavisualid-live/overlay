@@ -467,8 +467,14 @@
                             </div>
                         </div>
                     </div>
-                    <input type="text" id="home_name" oninput="onTeamNameChanged('home')" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
-                    
+                    <!-- Team name from match (read-only badge) -->
+                    <div id="home_team_display" class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3">
+                        <div class="text-xs text-slate-400 mb-1">Dari Jadwal Match</div>
+                        <div id="home_name_display" class="font-black text-white text-lg">-</div>
+                    </div>
+                    <!-- Hidden input for actual value -->
+                    <input type="hidden" id="home_name" value="HOME">
+
                     <div class="grid grid-cols-2 gap-3 pt-1">
                         <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800 space-y-1.5">
                             <div class="flex items-center justify-between">
@@ -520,7 +526,13 @@
                             </div>
                         </div>
                     </div>
-                    <input type="text" id="away_name" oninput="onTeamNameChanged('away')" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 font-bold text-white text-lg">
+                    <!-- Team name from match (read-only badge) -->
+                    <div id="away_team_display" class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-3">
+                        <div class="text-xs text-slate-400 mb-1">Dari Jadwal Match</div>
+                        <div id="away_name_display" class="font-bold text-white text-lg">-</div>
+                    </div>
+                    <!-- Hidden input for actual value -->
+                    <input type="hidden" id="away_name" value="AWAY">
 
                     <div class="grid grid-cols-2 gap-3 pt-1">
                         <div class="bg-slate-900/70 p-2 rounded-lg border border-slate-800 space-y-1.5">
@@ -2409,13 +2421,20 @@
             });
         }
 
-        function loadSelectedMatch(idx) {
+function loadSelectedMatch(idx) {
             if (idx === "") return;
             let match = filteredMatchesCache[idx];
             if (match) {
                 document.getElementById('match_name').value = `BABAK 1 • ${match.round_name}`;
+                
+                // Update hidden inputs (for Supabase)
                 document.getElementById('home_name').value = match.home_team;
                 document.getElementById('away_name').value = match.away_team;
+                
+                // Update display badges (read-only)
+                document.getElementById('home_name_display').innerText = match.home_team;
+                document.getElementById('away_name_display').innerText = match.away_team;
+                
                 stateData.home_score = 0;
                 stateData.away_score = 0;
                 stateData.fs_swapped = false;
@@ -2444,7 +2463,8 @@
                 renderPanel(stateData.sport_type);
                 updateGoalScorerPlayers();
                 updateYellowCardPlayers();
-saveChanges();
+                saveChanges();
+            }
         }
 
         // ==================== SCOREBOARD STYLE SYSTEM ====================
@@ -2664,7 +2684,6 @@ saveChanges();
             };
             reader.readAsText(file);
             document.getElementById('import-style-file').value = '';
-        }
         }
 
         function toggleScreenFlip() {
