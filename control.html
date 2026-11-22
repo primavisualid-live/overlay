@@ -1134,15 +1134,25 @@
             alert(`Daftar pemain ${side.toUpperCase()} (${parsedList.length} pemain) berhasil disimpan!`);
         }
 
+        function parsePlayersData(players) {
+            if (!players) return [];
+            if (Array.isArray(players)) return players;
+            if (typeof players === 'string') {
+                try { return JSON.parse(players); } catch(e) { return []; }
+            }
+            return [];
+        }
+
         function onTeamNameChanged(side) {
             updateLivePreview();
             const sport = stateData.sport_type || 'futsal';
             const teamName = document.getElementById(side + '_name').value.trim();
             const foundTeam = dbTeams.find(t => t.sport_type === sport && t.team_name.trim().toLowerCase() === teamName.toLowerCase());
-            if (foundTeam && Array.isArray(foundTeam.players)) {
-                extraObj[side + '_players'] = foundTeam.players;
-                document.getElementById(side + '_players_text').value = playersArrayToText(foundTeam.players);
-                document.getElementById(side + '_player_count').innerText = foundTeam.players.length;
+            const players = parsePlayersData(foundTeam?.players);
+            if (players.length > 0) {
+                extraObj[side + '_players'] = players;
+                document.getElementById(side + '_players_text').value = playersArrayToText(players);
+                document.getElementById(side + '_player_count').innerText = players.length;
                 updateCardPlayerOptions();
             }
             updateGoalScorerPlayers();
