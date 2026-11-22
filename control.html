@@ -1952,8 +1952,11 @@
         const originalSwitchSport = switchSport;
         switchSport = function(sport, autoSave = true) {
             originalSwitchSport(sport, autoSave);
-            document.getElementById('mgr-sport-filter').value = sport;
-            loadManagerTeams();
+            const mgrSportFilter = document.getElementById('mgr-sport-filter');
+            if (mgrSportFilter) {
+                mgrSportFilter.value = sport;
+                loadManagerTeams();
+            }
         };
 
         // TEAM EDITOR
