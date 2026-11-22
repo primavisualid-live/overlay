@@ -2877,32 +2877,6 @@ function loadSelectedMatch(idx) {
             stateData.last_scoring_team = document.getElementById(side + '_name').value;
             let el = document.getElementById(side + '_score_val');
             if (el) el.innerText = stateData[side + '_score'];
-            
-            // Capture assist from assist input if filled
-            const assistInput = document.getElementById(`goal_scorer_assist_${side}`);
-            const assist = assistInput ? assistInput.value.trim() : '';
-            if (assist) {
-                if (!extraObj.goal_scorers) extraObj.goal_scorers = { home: [], away: [] };
-                extraObj.goal_scorers[side].push({
-                    name: assist,
-                    number: '',
-                    minute: Math.floor((Date.now() - (extraObj.timer_started_at || Date.now())) / 1000 / 60) || 1,
-                    assist: ''
-                });
-                // Update display list
-                const listEl = document.getElementById(`${side}_goal_scorers_list`);
-                if (listEl) {
-                    if (listEl.querySelector('.text-center')) listEl.innerHTML = '';
-                    const div = document.createElement('div');
-                    div.className = 'bg-slate-900/50 p-1.5 rounded border border-slate-700/50 flex items-center justify-between gap-2 text-xs';
-                    div.innerHTML = `
-                        <span class="text-cyan-400 font-bold">Asist: ${assist}</span>
-                        <span class="text-white/70">Menit ${Math.floor((Date.now() - (extraObj.timer_started_at || Date.now())) / 1000 / 60) || 1}</span>
-                    `;
-                    listEl.appendChild(div);
-                }
-                assistInput.value = '';
-            }
             saveChanges();
         }
 
