@@ -100,17 +100,22 @@
                             </div>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap">
+                            <button onclick="editTeamDetail()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-black text-xs">✏️ Edit Tim</button>
+                            <button onclick="deleteTeamDetail()" class="bg-rose-600 hover:bg-rose-500 px-4 py-2 rounded-lg font-black text-xs">🗑️ Hapus Tim</button>
                             <button onclick="exportPlayersExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">📤 Export Pemain</button>
                             <button onclick="openPlayerManagerForManager()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">👥 Kelola Pemain</button>
                         </div>
                     </div>
 
-                    <!-- PLAYER LIST -->
+                    <!-- PLAYER LIST WITH INLINE CRUD -->
                     <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
                         <div class="flex justify-between items-center mb-2">
                             <h4 class="text-xs font-bold text-slate-300">Daftar Pemain (<span id="detail-player-count">0</span>)</h4>
-                            <input type="file" id="detail-import-file" accept=".xlsx,.xls" class="hidden" onchange="importPlayersForDetail(event)">
-                            <button onclick="document.getElementById('detail-import-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded text-[10px] font-bold">📥 Import Excel</button>
+                            <div class="flex items-center gap-1.5">
+                                <input type="file" id="detail-import-file" accept=".xlsx,.xls" class="hidden" onchange="importPlayersForDetail(event)">
+                                <button onclick="document.getElementById('detail-import-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded text-[10px] font-bold">📥 Import Excel</button>
+                                <button onclick="addPlayerInline()" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-[10px] font-bold">➕ Tambah</button>
+                            </div>
                         </div>
                         <div id="detail-player-list" class="max-h-64 overflow-y-auto space-y-1"></div>
                     </div>
@@ -964,6 +969,150 @@
             let safeName = teamName.replace(/[^a-zA-Z0-9]/g, '_');
             let filename = `players_${safeName}_${type}_${new Date().toISOString().slice(0,10)}.xlsx`;
             XLSX.writeFile(wb, filename);
+        }
+
+        // ==================== TEAM CRUD ====================
+        function editTeamDetail() {
+            if (!mgrSelectedTeamId) return;
+            let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+            if (!team) return;
+
+            const newName = prompt('Nama Tim:', team.team_name);
+            if (!newName || newName.trim() === '') return;
+            if (newName.trim() === team.team_name) return;
+
+            const newShirt = prompt('Warna Baju (hex):', team.team_color || '#f59e0b');
+            if (!newShirt) return;
+            
+            const newShorts = prompt('Warna Celana (hex):', team.team_shorts_color || '#1e293b');
+            if (!newShorts) return;
+
+            updateTeamInDB(team.id, {
+                team_name: newName.trim(),
+                team_color: newShirt,
+                team_shorts_color: newShorts
+            });
+        }
+
+        function deleteTeamDetail() {
+            if (!mgrSelectedTeamId) return;
+            let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+            if (!team) return;
+
+            if (!confirm(`Hapus tim "${team.team_name}"? Semua pemain dan data terkait akan terhapus!`)) return;
+
+            supabaseClient.from('teams').delete().eq('id', mgrSelectedTeamId).then(({ error }) => {
+                if (!error) {
+                    alert('Tim berhasil dihapus!');
+                    mgrSelectedTeamId = null;
+                    document.getElementById('team-detail').classList.add('hidden');
+                    loadManagerTeams();
+                } else {
+                    alert('Gagal menghapus: ' + error.message);
+                }
+            });
+        }
+
+        async function updateTeamInDB(id, updates) {
+            let { error } = await supabaseClient.from('teams').update(updates).eq('id', id);
+            if (!error) {
+                alert('Tim berhasil diupdate!');
+                await fetchTeams();
+                let updatedTeam = dbTeams.find(t => t.id === id);
+                if (updatedTeam) selectTeamForDetail(id);
+            } else {
+                alert('Gagal mengupdate: ' + error.message);
+            }
+        }
+
+        // ==================== PLAYER INLINE CRUD ====================
+        function addPlayerInline() {
+            if (!mgrSelectedTeamId) return alert('Pilih tim terlebih dahulu!');
+            let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+            if (!team) return;
+
+            const number = prompt('Nomor punggung (kosongkan jika tidak ada):');
+            const name = prompt('Nama Pemain:');
+            if (!name || name.trim() === '') return alert('Nama wajib diisi!');
+
+            let players = team.players || [];
+            const num = (number || '').trim();
+            if (num && players.some(p => p.number === num)) return alert('Nomor sudah digunakan!');
+
+            players.push({ number: num || '', name: name.trim().toUpperCase() });
+            await saveTeamPlayersToDB(team.id, players);
+        }
+
+        function editPlayerInline(index) {
+            if (!mgrSelectedTeamId) return;
+            let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+            if (!team) return;
+            let players = team.players || [];
+            if (index >= players.length) return;
+            let player = players[index];
+
+            const newNumber = prompt('Nomor punggung:', player.number || '');
+            if (newNumber === null) return;
+            const newName = prompt('Nama Pemain:', player.name);
+            if (newName === null) return;
+            if (!newName.trim()) return alert('Nama tidak boleh kosong!');
+
+            const num = (newNumber || '').trim();
+            if (num && players.some((p, i) => p.number === num && i !== index)) return alert('Nomor sudah digunakan!');
+
+            player.number = num || '';
+            player.name = newName.trim().toUpperCase();
+            await saveTeamPlayersToDB(team.id, players);
+        }
+
+        function deletePlayerInline(index) {
+            if (!mgrSelectedTeamId) return;
+            if (!confirm('Hapus pemain ini?')) return;
+            let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+            if (!team) return;
+            let players = team.players || [];
+            players.splice(index, 1);
+            await saveTeamPlayersToDB(team.id, players);
+        }
+
+        async function saveTeamPlayersToDB(teamId, players) {
+            let { error } = await supabaseClient.from('teams').update({ players: players }).eq('id', teamId);
+            if (!error) {
+                await fetchTeams();
+                let updatedTeam = dbTeams.find(t => t.id === teamId);
+                if (updatedTeam) {
+                    renderDetailPlayers(updatedTeam.players || []);
+                    renderPlayerManagerList(updatedTeam.players || []);
+                    updateStrategyPanel(updatedTeam);
+                }
+            } else {
+                alert('Gagal menyimpan: ' + error.message);
+            }
+        }
+
+        // Update renderDetailPlayers to include inline edit/delete buttons
+        function renderDetailPlayers(players) {
+            let container = document.getElementById('detail-player-list');
+            container.innerHTML = '';
+            if (players.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Belum ada pemain. Klik ➕ Tambah atau 📥 Import Excel</div>';
+                return;
+            }
+            let sorted = [...players].sort((a, b) => (parseInt(a.number) || 99) - (parseInt(b.number) || 99));
+            sorted.forEach((p, originalIndex) => {
+                let div = document.createElement('div');
+                div.className = 'flex items-center gap-2 p-1.5 bg-slate-800/50 rounded border border-slate-700/50';
+                div.innerHTML = `
+                    <span class="w-7 text-center text-xs font-mono text-amber-400 font-bold">${p.number || '-'}</span>
+                    <span class="text-white text-sm truncate flex-1">${p.name}</span>
+                    <span class="text-[10px] text-slate-500">${getPositionLabel(p.number)}</span>
+                    <div class="flex items-center gap-1 ml-2">
+                        <button onclick="editPlayerInline(${originalIndex})" class="bg-violet-600 hover:bg-violet-500 px-2 py-1 rounded text-[10px] font-bold">✏️</button>
+                        <button onclick="deletePlayerInline(${originalIndex})" class="bg-rose-600 hover:bg-rose-500 px-2 py-1 rounded text-[10px] font-bold">🗑️</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
         }
 
         // ==================== INIT ====================
