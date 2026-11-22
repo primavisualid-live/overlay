@@ -2984,17 +2984,33 @@ function loadSelectedMatch(idx) {
 
         // ==================== NEW OVERLAY TRIGGERS ====================
         function updateGoalScorerPlayers() {
-            const side = document.getElementById('goal_scorer_side').value;
-            const players = extraObj[side + '_players'] || [];
-            const select = document.getElementById('goal_scorer_player');
-            select.innerHTML = '<option value="">-- Pilih Pemain --</option>';
-            players.forEach(p => {
-                const label = p.number ? `#${p.number} ${p.name}` : p.name;
-                const opt = document.createElement('option');
-                opt.value = JSON.stringify({ name: p.name, team: p.team || '', number: p.number || '' });
-                opt.textContent = label;
-                select.appendChild(opt);
-            });
+            // Update home dropdown
+            const homeSelect = document.getElementById('goal_scorer_player_home');
+            if (homeSelect) {
+                const players = extraObj['home_players'] || [];
+                homeSelect.innerHTML = '<option value="">-- Pilih Pemain --</option>';
+                players.forEach(p => {
+                    const label = p.number ? `#${p.number} ${p.name}` : p.name;
+                    const opt = document.createElement('option');
+                    opt.value = JSON.stringify({ name: p.name, team: p.team || '', number: p.number || '' });
+                    opt.textContent = label;
+                    homeSelect.appendChild(opt);
+                });
+            }
+            
+            // Update away dropdown
+            const awaySelect = document.getElementById('goal_scorer_player_away');
+            if (awaySelect) {
+                const players = extraObj['away_players'] || [];
+                awaySelect.innerHTML = '<option value="">-- Pilih Pemain --</option>';
+                players.forEach(p => {
+                    const label = p.number ? `#${p.number} ${p.name}` : p.name;
+                    const opt = document.createElement('option');
+                    opt.value = JSON.stringify({ name: p.name, team: p.team || '', number: p.number || '' });
+                    opt.textContent = label;
+                    awaySelect.appendChild(opt);
+                });
+            }
         }
 
         function updateYellowCardPlayers() {
