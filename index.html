@@ -5,7 +5,7 @@
     <title>OBS Realtime Broadcast Overlay</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
+<style>
         body { background: transparent; margin: 0; overflow: hidden; }
         body.mode-fullscreen { background: #020617; }
         
@@ -36,6 +36,18 @@
             100% { transform: scale(0.9); opacity: 0; }
         }
         .animate-goal-banner { animation: goalTextPop 3.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+
+        @keyframes pulseYellow { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .animate-pulse-yellow { animation: pulseYellow 1s ease-in-out infinite; }
+
+        .player-card { transition: transform 0.2s, box-shadow 0.2s; }
+        .player-card:hover { transform: scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+
+        .formation-player { transition: all 0.3s ease; }
+        .formation-player:hover { transform: scale(1.1); z-index: 10; }
     </style>
 </head>
 <body id="body-layout" class="w-[1920px] h-[1080px] relative font-sans text-white">
@@ -250,6 +262,208 @@
         <div id="stinger-event-title" class="text-6xl font-black tracking-widest uppercase text-white drop-shadow-lg">LIVE BROADCAST</div>
     </div>
 
+    <!-- GOAL SCORER OVERLAY -->
+    <div id="goal-scorer-overlay" class="hidden fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
+        <div class="bg-gradient-to-r from-amber-500 via-amber-600 to-slate-900 rounded-3xl shadow-2xl border-2 border-amber-400 p-8 max-w-2xl mx-4 text-center animate-fade-in-up">
+            <div class="text-[14px] font-black uppercase tracking-widest text-amber-300 mb-2">⚽ GOAL DICETAK!</div>
+            <div id="goal-scorer-name" class="text-5xl font-black text-white mb-1">NAMA PEMAIN</div>
+            <div id="goal-scorer-team" class="text-2xl font-bold text-amber-300 mb-2">NAMA TIM</div>
+            <div id="goal-scorer-minute" class="text-xl font-mono text-white/80">Menit ke-00</div>
+            <div class="mt-6 flex justify-center gap-4">
+                <div class="bg-black/30 px-4 py-2 rounded-full">
+                    <span class="text-xs font-bold text-amber-300">Assist:</span>
+                    <span id="goal-scorer-assist" class="ml-2 text-white">-</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- YELLOW CARD OVERLAY (Below Score) -->
+    <div id="yellow-card-overlay" class="hidden fixed bottom-28 left-1/2 transform -translate-x-1/2 z-30 flex flex-col items-center gap-2 pointer-events-none">
+        <div id="yellow-card-home" class="hidden bg-yellow-500/90 border-2 border-yellow-400 rounded-xl px-6 py-3 flex items-center gap-3 shadow-xl animate-fade-in-up">
+            <span class="text-3xl">🟨</span>
+            <div class="text-left">
+                <div class="text-xs font-bold uppercase tracking-wide text-yellow-200">KARTU KUNING</div>
+                <div id="yellow-card-home-player" class="text-xl font-black text-white">#10 NAMA</div>
+                <div id="yellow-card-home-team" class="text-sm text-yellow-200">TIM</div>
+            </div>
+        </div>
+        <div id="yellow-card-away" class="hidden bg-yellow-500/90 border-2 border-yellow-400 rounded-xl px-6 py-3 flex items-center gap-3 shadow-xl animate-fade-in-up">
+            <div class="text-right">
+                <div class="text-xs font-bold uppercase tracking-wide text-yellow-200">KARTU KUNING</div>
+                <div id="yellow-card-away-player" class="text-xl font-black text-white">#10 NAMA</div>
+                <div id="yellow-card-away-team" class="text-sm text-yellow-200">TIM</div>
+            </div>
+            <span class="text-3xl">🟨</span>
+        </div>
+    </div>
+
+    <!-- TEAM STRATEGY OVERLAY -->
+    <div id="team-strategy-overlay" class="hidden fixed inset-0 z-35 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900/95 border-2 border-slate-700 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden animate-fade-in-up">
+            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+                <h2 class="text-xl font-black text-amber-400">📋 STRATEGI & FORMASI TIM</h2>
+                <button onclick="hideTeamStrategyOverlay()" class="text-slate-400 hover:text-white text-2xl p-1">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[80vh]">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- HOME TEAM STRATEGY -->
+                    <div id="strategy-home" class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                            <div class="flex items-center gap-3">
+                                <div id="strategy-home-shirt" class="w-10 h-14 rounded overflow-hidden border border-white/20 flex flex-col">
+                                    <span class="h-[60%] w-full" style="background:#f59e0b"></span>
+                                    <span class="h-[40%] w-full border-t border-black/30" style="background:#1e293b"></span>
+                                </div>
+                                <div>
+                                    <div id="strategy-home-name" class="text-lg font-black text-white">HOME</div>
+                                    <div id="strategy-home-formation" class="text-sm text-amber-300">Formasi: 4-4-2</div>
+                                </div>
+                            </div>
+                            <button onclick="toggleStrategyPanel('home')" class="bg-violet-600 hover:bg-violet-500 px-3 py-1.5 rounded-lg text-xs font-bold">Detail</button>
+                        </div>
+                        <!-- Formation Pitch -->
+                        <div class="bg-green-900/30 rounded-xl p-4 relative min-h-[400px] border border-green-700/50">
+                            <svg id="formation-pitch-home" class="w-full h-full" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet">
+                                <defs>
+                                    <linearGradient id="pitchGrass" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#1a5c1a"/>
+                                        <stop offset="100%" style="stop-color:#0d3d0d"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect width="600" height="400" fill="url(#pitchGrass)"/>
+                                <!-- Pitch lines -->
+                                <rect x="20" y="20" width="560" height="360" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <line x1="300" y1="20" x2="300" y2="380" stroke="#2d8a2d" stroke-width="2"/>
+                                <circle cx="300" cy="200" r="60" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <circle cx="300" cy="200" r="6" fill="#2d8a2d"/>
+                                <!-- Penalty areas -->
+                                <rect x="20" y="120" width="100" height="160" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <rect x="480" y="120" width="100" height="160" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <!-- Goal areas -->
+                                <rect x="20" y="160" width="30" height="80" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <rect x="550" y="160" width="30" height="80" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                            </svg>
+                            <div id="formation-players-home" class="absolute inset-0"></div>
+                        </div>
+                        <!-- Tactics -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-amber-300">Gaya Main</div>
+                                <div id="strategy-home-style" class="text-sm text-white">Possession</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-amber-300">Pressing</div>
+                                <div id="strategy-home-press" class="text-sm text-white">Tinggi</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-amber-300">Tempo</div>
+                                <div id="strategy-home-tempo" class="text-sm text-white">Cepat</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-amber-300">Lebar</div>
+                                <div id="strategy-home-width" class="text-sm text-white">Penuh</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AWAY TEAM STRATEGY -->
+                    <div id="strategy-away" class="space-y-4">
+                        <div class="flex items-center justify-between p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                            <div class="flex items-center gap-3">
+                                <div>
+                                    <div id="strategy-away-name" class="text-lg font-black text-white text-right">AWAY</div>
+                                    <div id="strategy-away-formation" class="text-sm text-cyan-300 text-right">Formasi: 4-3-3</div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div id="strategy-away-shirt" class="w-10 h-14 rounded overflow-hidden border border-white/20 flex flex-col">
+                                        <span class="h-[60%] w-full" style="background:#06b6d4"></span>
+                                        <span class="h-[40%] w-full border-t border-black/30" style="background:#ffffff"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="toggleStrategyPanel('away')" class="bg-violet-600 hover:bg-violet-500 px-3 py-1.5 rounded-lg text-xs font-bold">Detail</button>
+                        </div>
+                        <!-- Formation Pitch -->
+                        <div class="bg-green-900/30 rounded-xl p-4 relative min-h-[400px] border border-green-700/50">
+                            <svg id="formation-pitch-away" class="w-full h-full" viewBox="0 0 600 400" preserveAspectRatio="xMidYMid meet">
+                                <defs>
+                                    <linearGradient id="pitchGrass2" x1="0%" y1="0%" x2="0%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#1a5c1a"/>
+                                        <stop offset="100%" style="stop-color:#0d3d0d"/>
+                                    </linearGradient>
+                                </defs>
+                                <rect width="600" height="400" fill="url(#pitchGrass2)"/>
+                                <rect x="20" y="20" width="560" height="360" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <line x1="300" y1="20" x2="300" y2="380" stroke="#2d8a2d" stroke-width="2"/>
+                                <circle cx="300" cy="200" r="60" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <circle cx="300" cy="200" r="6" fill="#2d8a2d"/>
+                                <rect x="20" y="120" width="100" height="160" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <rect x="480" y="120" width="100" height="160" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <rect x="20" y="160" width="30" height="80" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                                <rect x="550" y="160" width="30" height="80" fill="none" stroke="#2d8a2d" stroke-width="2"/>
+                            </svg>
+                            <div id="formation-players-away" class="absolute inset-0"></div>
+                        </div>
+                        <!-- Tactics -->
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-cyan-300">Gaya Main</div>
+                                <div id="strategy-away-style" class="text-sm text-white">Counter Attack</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-cyan-300">Pressing</div>
+                                <div id="strategy-away-press" class="text-sm text-white">Sedang</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-cyan-300">Tempo</div>
+                                <div id="strategy-away-tempo" class="text-sm text-white">Normal</div>
+                            </div>
+                            <div class="bg-slate-800/50 p-3 rounded-lg border border-slate-700">
+                                <div class="text-xs font-bold text-cyan-300">Lebar</div>
+                                <div id="strategy-away-width" class="text-sm text-white">Sayap</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Key Players Comparison -->
+                <div class="mt-6 pt-6 border-t border-slate-700">
+                    <h3 class="text-lg font-black text-white mb-4 text-center">⭐ PEMAIN KUNCI</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div id="key-players-home" class="bg-slate-800/50 p-4 rounded-xl border border-slate-700"></div>
+                        <div id="key-players-away" class="bg-slate-800/50 p-4 rounded-xl border border-slate-700"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEAM LIST & VERSUS OVERLAY -->
+    <div id="team-versus-overlay" class="hidden fixed inset-0 z-35 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900/95 border-2 border-slate-700 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden animate-fade-in-up">
+            <div class="flex items-center justify-between p-4 border-b border-slate-700">
+                <h2 class="text-xl font-black text-amber-400">🏟️ DAFTAR TIM & VERSUS</h2>
+                <button onclick="hideTeamVersusOverlay()" class="text-slate-400 hover:text-white text-2xl p-1">✕</button>
+            </div>
+            <div class="p-4 overflow-y-auto max-h-[80vh]">
+                <!-- Tournament Bracket Style -->
+                <div id="versus-bracket" class="space-y-6">
+                    <!-- Will be populated by JS -->
+                </div>
+                
+                <!-- Full Team Rosters -->
+                <div class="mt-8 pt-6 border-t border-slate-700">
+                    <h3 class="text-lg font-black text-white mb-4 text-center">📋 SUSUNAN PEMAIN LENGKAP</div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div id="roster-home" class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 max-h-96 overflow-y-auto"></div>
+                        <div id="roster-away" class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 max-h-96 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = "https://tjueseuepvtlilsabpye.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_jcClReuAmoQJXRGWHK2jDg_Jp7JMEYv";
@@ -269,6 +483,10 @@
         let lastGoalTrigger = 0;
         let lastStinger = 0;
         let lastCardTs = 0;
+        let lastGoalScorerTs = 0;
+        let lastYellowCardTs = 0;
+        let lastStrategyOverlayTs = 0;
+        let lastVersusOverlayTs = 0;
         let timerSeconds = 1200;
         let timerStatus = 'stopped';
         let timerMode = 'down';
@@ -312,8 +530,8 @@
 
         function computeSyncedRedSeconds() {
             let baseSecs = parseInt(currentExtra.red_penalty_seconds) || 120;
-            if (redPenActive && timerStatus === 'running' && currentExtra.red_started_at) {
-                const elapsed = Math.floor((Date.now() - parseInt(currentExtra.red_started_at)) / 1000);
+            if (redPenActive && currentExtra.red_penalty_timer_started_at) {
+                const elapsed = Math.floor((Date.now() - parseInt(currentExtra.red_penalty_timer_started_at)) / 1000);
                 return Math.max(0, baseSecs - elapsed);
             }
             return baseSecs;
@@ -324,15 +542,16 @@
             if (timerStatus === 'running') {
                 timerSeconds = computeSyncedTimerSeconds();
                 updateTimerDisplay();
-
-                if (redPenActive) {
-                    redPenSeconds = computeSyncedRedSeconds();
-                    const fmtRed = formatMMSS(redPenSeconds);
-                    document.getElementById('obs_red_sinbin_clock').innerText = fmtRed;
-                    const fsRedClock = document.getElementById('fs_red_sinbin_clock');
-                    if (fsRedClock) fsRedClock.innerText = fmtRed;
-                }
             }
+
+            if (redPenActive) {
+                redPenSeconds = computeSyncedRedSeconds();
+                const fmtRed = formatMMSS(redPenSeconds);
+                document.getElementById('obs_red_sinbin_clock').innerText = fmtRed;
+                const fsRedClock = document.getElementById('fs_red_sinbin_clock');
+                if (fsRedClock) fsRedClock.innerText = fmtRed;
+            }
+
             if (timeoutActive) {
                 timeoutSeconds = computeSyncedTimeoutSeconds();
                 let formatted = formatMMSS(timeoutSeconds);
@@ -642,27 +861,79 @@
                 }
             }
             lastStinger = stingerVal;
+
+            // ==================== NEW OVERLAY TRIGGERS ====================
+            // Goal Scorer Overlay
+            if (extra.goal_scorer_event && extra.goal_scorer_event.timestamp && extra.goal_scorer_event.timestamp !== lastGoalScorerTs) {
+                lastGoalScorerTs = extra.goal_scorer_event.timestamp;
+                showGoalScorer(
+                    extra.goal_scorer_event.name,
+                    extra.goal_scorer_event.team,
+                    extra.goal_scorer_event.minute,
+                    extra.goal_scorer_event.assist
+                );
+}
+
+// Yellow Card Overlay
+            if (extra.yellow_card_event && extra.yellow_card_event.timestamp && extra.yellow_card_event.timestamp !== lastYellowCardTs) {
+                lastYellowCardTs = extra.yellow_card_event.timestamp;
+                showYellowCard(
+                    extra.yellow_card_event.side,
+                    extra.yellow_card_event.player,
+                    extra.yellow_card_event.team
+                );
+            }
+
+            // Team Strategy Overlay
+            if (extra.show_strategy_overlay && extra.strategy_overlay_timestamp && extra.strategy_overlay_timestamp !== lastStrategyOverlayTs) {
+                lastStrategyOverlayTs = extra.strategy_overlay_timestamp;
+                showTeamStrategyOverlay();
+            }
+
+            // Team Versus Overlay
+            if (extra.show_versus_overlay && extra.versus_overlay_timestamp && extra.versus_overlay_timestamp !== lastVersusOverlayTs) {
+                lastVersusOverlayTs = extra.versus_overlay_timestamp;
+                showTeamVersusOverlay();
+            }
         }
 
         async function fetchInitialState() {
             let { data } = await supabaseClient.from('tournament_state').select('*').eq('id', 1).single();
             if (data) updateUI(data);
         }
-        fetchInitialState();
+        let overlayChannel = null;
+        let overlayReconnectAttempt = 0;
+        let overlayMaxReconnectDelay = 30000;
+
+        function setupOverlayChannel() {
+            overlayChannel = supabaseClient
+                .channel('public:tournament_state')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
+                    updateUI(payload.new);
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        overlayReconnectAttempt = 0;
+                        fetchInitialState();
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        scheduleOverlayReconnect();
+                    }
+                });
+        }
+
+        function scheduleOverlayReconnect() {
+            if (overlayChannel) {
+                overlayChannel.unsubscribe();
+            }
+            const delay = Math.min(1000 * Math.pow(2, overlayReconnectAttempt), overlayMaxReconnectDelay);
+            overlayReconnectAttempt++;
+            setTimeout(setupOverlayChannel, delay);
+        }
+
+        setupOverlayChannel();
 
         // Fallback polling ringan setiap 2.5 detik jika Realtime WebSocket terputus di OBS
         setInterval(fetchInitialState, 2500);
-
-        supabaseClient
-            .channel('public:tournament_state')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
-                updateUI(payload.new);
-            })
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') {
-                    fetchInitialState();
-                }
-            });
 
         // ==================== DETEKSI AKTIVASI OVERLAY DI OBS STUDIO ====================
         async function reportObsVisibility(isVisible) {
@@ -697,5 +968,231 @@
             });
         }
     </script>
-</body>
-</html>
+
+    <!-- NEW OVERLAY FUNCTIONS -->
+    <script>
+        // ==================== GOAL SCORER OVERLAY ====================
+        function showGoalScorer(scorerName, teamName, minute, assistName = '') {
+            const overlay = document.getElementById('goal-scorer-overlay');
+            document.getElementById('goal-scorer-name').innerText = scorerName || 'PEMAIN';
+            document.getElementById('goal-scorer-team').innerText = teamName || 'TIM';
+            document.getElementById('goal-scorer-minute').innerText = `Menit ke-${minute || 0}`;
+            document.getElementById('goal-scorer-assist').innerText = assistName || '-';
+            overlay.classList.remove('hidden');
+            setTimeout(() => overlay.classList.add('hidden'), 6000);
+        }
+
+        // ==================== YELLOW CARD OVERLAY ====================
+        function showYellowCard(side, playerLabel, teamName) {
+            const overlay = document.getElementById('yellow-card-overlay');
+            const cardEl = document.getElementById(`yellow-card-${side}`);
+            const playerEl = document.getElementById(`yellow-card-${side}-player`);
+            const teamEl = document.getElementById(`yellow-card-${side}-team`);
+            
+            if (cardEl && playerEl && teamEl) {
+                playerEl.innerText = playerLabel || '#10 PEMAIN';
+                teamEl.innerText = teamName || 'TIM';
+                overlay.classList.remove('hidden');
+                cardEl.classList.remove('hidden');
+                setTimeout(() => {
+                    cardEl.classList.add('hidden');
+                    // Check if other card is also hidden
+                    const otherSide = side === 'home' ? 'away' : 'home';
+                    const otherCard = document.getElementById(`yellow-card-${otherSide}`);
+                    if (otherCard && otherCard.classList.contains('hidden')) {
+                        overlay.classList.add('hidden');
+                    }
+                }, 5000);
+            }
+        }
+
+        // ==================== TEAM STRATEGY OVERLAY ====================
+        function showTeamStrategyOverlay() {
+            const overlay = document.getElementById('team-strategy-overlay');
+            overlay.classList.remove('hidden');
+            renderTeamStrategy();
+        }
+
+        function hideTeamStrategyOverlay() {
+            document.getElementById('team-strategy-overlay').classList.add('hidden');
+        }
+
+        function toggleStrategyPanel(side) {
+            // Expand/collapse detailed panel
+            console.log('Toggle strategy panel for', side);
+        }
+
+        function renderTeamStrategy() {
+            // Get data from currentState and currentExtra
+            const homeName = currentState.home_name || 'HOME';
+            const awayName = currentState.away_name || 'AWAY';
+            const homeColor = currentState.home_color || '#f59e0b';
+            const homeShorts = currentState.home_shorts_color || '#1e293b';
+            const awayColor = currentState.away_color || '#06b6d4';
+            const awayShorts = currentState.away_shorts_color || '#ffffff';
+            const homePlayers = currentExtra.home_players || [];
+            const awayPlayers = currentExtra.away_players || [];
+
+            // Update headers
+            document.getElementById('strategy-home-name').innerText = homeName;
+            document.getElementById('strategy-away-name').innerText = awayName;
+            document.getElementById('strategy-home-shirt').querySelector('span').style.background = homeColor;
+            document.getElementById('strategy-home-shirt').querySelectorAll('span')[1].style.background = homeShorts;
+            document.getElementById('strategy-away-shirt').querySelector('span').style.background = awayColor;
+            document.getElementById('strategy-away-shirt').querySelectorAll('span')[1].style.background = awayShorts;
+
+            // Render formations
+            renderFormation('home', homePlayers, homeColor);
+            renderFormation('away', awayPlayers, awayColor);
+
+            // Render key players
+            renderKeyPlayers('home', homePlayers, homeColor);
+            renderKeyPlayers('away', awayPlayers, awayColor);
+        }
+
+        function renderFormation(side, players, color) {
+            const container = document.getElementById(`formation-players-${side}`);
+            container.innerHTML = '';
+            
+            // Default 4-4-2 positions (x, y percentages)
+            const positions = [
+                {x: 50, y: 90, role: 'GK', num: 1},      // GK
+                {x: 15, y: 65, role: 'LB', num: 3},      // LB
+                {x: 35, y: 55, role: 'CB', num: 4},      // CB
+                {x: 65, y: 55, role: 'CB', num: 5},      // CB
+                {x: 85, y: 65, role: 'RB', num: 2},      // RB
+                {x: 15, y: 40, role: 'LM', num: 11},     // LM
+                {x: 35, y: 35, role: 'CM', num: 6},      // CM
+                {x: 65, y: 35, role: 'CM', num: 8},      // CM
+                {x: 85, y: 40, role: 'RM', num: 7},      // RM
+                {x: 35, y: 15, role: 'ST', num: 9},      // ST
+                {x: 65, y: 15, role: 'ST', num: 10},     // ST
+            ];
+
+            // Map players to positions by number if available
+            const playersByNum = {};
+            players.forEach(p => {
+                if (p.number) playersByNum[p.number] = p;
+            });
+
+            positions.forEach((pos, i) => {
+                const player = playersByNum[pos.num] || (players[i] ? {number: pos.num, name: players[i].name || `Pemain ${i+1}`} : {number: pos.num, name: `Pemain ${i+1}`});
+                const el = document.createElement('div');
+                el.className = 'formation-player absolute';
+                el.style.left = `${pos.x}%`;
+                el.style.top = `${pos.y}%`;
+                el.style.transform = 'translate(-50%, -50%)';
+                el.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-${color.includes('f59e0b') ? 'amber' : 'cyan'}-500 border-2 border-white flex items-center justify-center text-white text-xs font-black shadow-lg">
+                        ${player.number || pos.num}
+                    </div>
+                    <div class="absolute top-full left-1/2 -translate-x-1/2 mt-1 whitespace-nowrap bg-black/80 px-1.5 py-0.5 rounded text-[9px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                        ${player.name}
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function renderKeyPlayers(side, players, color) {
+            const container = document.getElementById(`key-players-${side}`);
+            // Sort by number, take first 5
+            const keyPlayers = [...players].sort((a, b) => (parseInt(a.number) || 99) - (parseInt(b.number) || 99)).slice(0, 5);
+            
+            container.innerHTML = keyPlayers.map((p, i) => `
+                <div class="flex items-center gap-3 p-2 bg-slate-900/50 rounded-lg border border-slate-700/50 hover:border-${color.includes('f59e0b') ? 'amber' : 'cyan'}-500/50 transition-colors">
+                    <div class="w-8 h-8 rounded-full bg-${color.includes('f59e0b') ? 'amber' : 'cyan'}-500 flex items-center justify-center text-white text-xs font-black">
+                        ${p.number || i+1}
+                    </div>
+                    <div class="flex-1 text-left min-w-0">
+                        <div class="font-bold text-white truncate">${p.name || 'Pemain'}</div>
+                        <div class="text-[10px] text-slate-400">${getPositionLabel(p.number)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getPositionLabel(num) {
+            const n = parseInt(num);
+            if (n === 1) return 'GK';
+            if (n >= 2 && n <= 5) return 'DEF';
+            if (n >= 6 && n <= 10) return 'MID';
+            if (n >= 11) return 'FWD';
+            return 'PLR';
+        }
+
+        // ==================== TEAM VERSUS OVERLAY ====================
+        function showTeamVersusOverlay() {
+            const overlay = document.getElementById('team-versus-overlay');
+            overlay.classList.remove('hidden');
+            renderTeamVersus();
+        }
+
+        function hideTeamVersusOverlay() {
+            document.getElementById('team-versus-overlay').classList.add('hidden');
+        }
+
+        function renderTeamVersus() {
+            // Get all teams from currentExtra (would need to fetch from dbTeams ideally)
+            const homeName = currentState.home_name || 'HOME';
+            const awayName = currentState.away_name || 'AWAY';
+            const homeColor = currentState.home_color || '#f59e0b';
+            const awayColor = currentState.away_color || '#06b6d4';
+            const homePlayers = currentExtra.home_players || [];
+            const awayPlayers = currentExtra.away_players || [];
+
+            // Render Versus Bracket
+            const bracket = document.getElementById('versus-bracket');
+            bracket.innerHTML = `
+                <div class="flex items-center justify-center gap-4">
+                    <div class="text-center flex-1">
+                        <div class="w-20 h-20 mx-auto rounded-full border-4 border-amber-400 bg-slate-800 flex items-center justify-center">
+                            <span class="text-3xl font-black text-amber-400">${homeName.charAt(0)}</span>
+                        </div>
+                        <div class="mt-2 font-bold text-white">${homeName}</div>
+                        <div class="text-sm text-amber-300">${homePlayers.length} Pemain</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-4xl font-black text-white">VS</div>
+                        <div class="text-xs text-slate-400">${currentState.match_name || 'Match'}</div>
+                    </div>
+                    <div class="text-center flex-1">
+                        <div class="w-20 h-20 mx-auto rounded-full border-4 border-cyan-400 bg-slate-800 flex items-center justify-center">
+                            <span class="text-3xl font-black text-cyan-400">${awayName.charAt(0)}</span>
+                        </div>
+                        <div class="mt-2 font-bold text-white">${awayName}</div>
+                        <div class="text-sm text-cyan-300">${awayPlayers.length} Pemain</div>
+                    </div>
+                </div>
+            `;
+
+            // Render Rosters
+            renderRoster('home', homeName, homeColor, homePlayers);
+            renderRoster('away', awayName, awayColor, awayPlayers);
+        }
+
+        function renderRoster(side, name, color, players) {
+            const container = document.getElementById(`roster-${side}`);
+            const sorted = [...players].sort((a, b) => (parseInt(a.number) || 99) - (parseInt(b.number) || 99));
+            
+            container.innerHTML = `
+                <div class="mb-4 pb-2 border-b border-slate-700 flex items-center gap-3">
+                    <div class="w-8 h-10 rounded overflow-hidden border border-white/20 flex flex-col flex-shrink-0">
+                        <span class="h-[60%] w-full" style="background:${color}"></span>
+                        <span class="h-[40%] w-full border-t border-black/30" style="background:${side === 'home' ? '#1e293b' : '#ffffff'}"></span>
+                    </div>
+                    <div class="font-black text-white">${name}</div>
+                    <div class="text-xs text-slate-400 ml-auto">${sorted.length} Pemain</div>
+                </div>
+                <div class="space-y-1 max-h-64 overflow-y-auto">
+                    ${sorted.map(p => `
+                        <div class="flex items-center gap-2 p-1.5 bg-slate-900/50 rounded border border-slate-700/50 hover:border-${side === 'home' ? 'amber' : 'cyan'}-500/50 transition-colors">
+                            <span class="w-7 text-center text-xs font-mono text-${side === 'home' ? 'amber' : 'cyan'}-400 font-bold">${p.number || '-'}</span>
+                            <span class="text-white truncate text-sm">${p.name || 'Pemain'}</span>
+                            <span class="text-[10px] text-slate-500 ml-auto">${getPositionLabel(p.number)}</span>
+                        </div>
+                    `).join('') || '<div class="text-center text-slate-500 py-4 text-sm">Belum ada data pemain</div>'}
+                </div>
+            `;
+        }
+    </script>

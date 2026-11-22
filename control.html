@@ -6,6 +6,7 @@
     <title>Tournament Control Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 font-sans pb-28">
     <div class="max-w-5xl mx-auto space-y-6">
@@ -90,6 +91,107 @@
             <div id="rules-box" class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-300"></div>
         </section>
 
+        <!-- 1.5 MANAGER DASHBOARD - ALUR LENGKAP -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4" id="manager-dashboard">
+            <div class="flex flex-wrap justify-between items-center gap-2">
+                <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400">🎯 MANAGER DASHBOARD - Alur Lengkap</h2>
+                <button onclick="refreshManagerDashboard()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-black text-xs">🔄 Refresh</button>
+            </div>
+
+            <!-- STEP 1: PILIH TIM -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">1️⃣ PILIH TIM</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1">Cabang Lomba</label>
+                        <select id="mgr-sport-filter" onchange="loadManagerTeams()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-bold">
+                            <option value="futsal">⚽ Futsal</option>
+                            <option value="panahan">🏹 Panahan</option>
+                            <option value="cerdas_cermat">🎙️ Cerdas Cermat</option>
+                        </select>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                        <label class="block text-[10px] font-bold text-slate-400 mb-1">Pilih Tim</label>
+                        <select id="mgr-team-select" onchange="loadManagerTeamDetail()" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white font-bold">
+                            <option value="">-- Pilih Tim --</option>
+                        </select>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded-lg border border-slate-700 flex items-end">
+                        <button onclick="openTeamEditorForManager()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 w-full py-2 rounded-lg font-black text-xs" disabled id="mgr-btn-edit-team">✏️ Edit Tim</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: DETAIL TIM & PEMAIN -->
+            <div id="mgr-team-detail" class="hidden bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-4">
+                        <div id="mgr-team-badge" class="w-16 h-20 rounded overflow-hidden border border-white/20 flex flex-col flex-shrink-0">
+                            <span id="mgr-team-shirt" class="h-[60%] w-full" style="background:#f59e0b"></span>
+                            <span id="mgr-team-shorts" class="h-[40%] w-full border-t border-black/30" style="background:#1e293b"></span>
+                        </div>
+                        <div>
+                            <div id="mgr-team-name" class="text-xl font-black text-white">NAMA TIM</div>
+                            <div id="mgr-team-meta" class="text-xs text-slate-400">0 Pemain | 0 Match | 0 Riwayat</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="openPlayerManagerForManager()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">👥 Kelola Pemain</button>
+                        <button onclick="exportPlayersExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">📤 Export Pemain</button>
+                        <button onclick="createMatchForTeam()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-black text-xs">⚽ Buat Match</button>
+                    </div>
+                </div>
+
+                <!-- PLAYER LIST -->
+                <div class="bg-slate-900/50 p-3 rounded-lg border border-slate-700">
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-bold text-slate-300">Daftar Pemain (<span id="mgr-player-count">0</span>)</h4>
+                        <input type="file" id="mgr-import-players-file" accept=".xlsx,.xls" class="hidden" onchange="importPlayersForManager(event)">
+                        <button onclick="document.getElementById('mgr-import-players-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded text-[10px] font-bold">📥 Import Excel</button>
+                    </div>
+                    <div id="mgr-player-list" class="max-h-64 overflow-y-auto space-y-1"></div>
+                </div>
+            </div>
+
+            <!-- STEP 3: MATCH TIM INI -->
+            <div id="mgr-team-matches" class="hidden bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-2">2️⃣ JADWAL MATCH TIM INI</h3>
+                <div id="mgr-match-list" class="max-h-64 overflow-y-auto space-y-2"></div>
+                <div class="pt-2 border-t border-slate-700 flex gap-2">
+                    <button onclick="createMatchForTeam()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-black text-xs">➕ Buat Match Baru</button>
+                    <button onclick="loadSelectedMatchForManager()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-black text-xs" disabled id="mgr-btn-load-match">📋 Load ke Scoring</button>
+                </div>
+            </div>
+
+            <!-- STEP 4: SIAP BROADCAST -->
+            <div id="mgr-broadcast-ready" class="hidden bg-slate-950/50 p-4 rounded-xl border border-emerald-500/30 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-2">3️⃣ SIAP BROADCAST</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
+                        <div class="text-slate-400">Tim Home</div>
+                        <div id="mgr-bc-home" class="font-bold text-amber-400">-</div>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
+                        <div class="text-slate-400">Tim Away</div>
+                        <div id="mgr-bc-away" class="font-bold text-cyan-400">-</div>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
+                        <div class="text-slate-400">Babak</div>
+                        <div id="mgr-bc-round" class="font-bold text-white">-</div>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded-lg border border-slate-700">
+                        <div class="text-slate-400">Match</div>
+                        <div id="mgr-bc-title" class="font-bold text-white">-</div>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="loadMatchToScoring()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-6 py-3 rounded-xl font-black text-sm shadow-lg">🚀 LOAD KE SCORING PANEL</button>
+                    <button onclick="openOverlayStrategy()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">📋 Buka Strategi</button>
+                    <button onclick="openOverlayVersus()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">🏟️ Buka Versus</button>
+                </div>
+            </div>
+        </section>
+
         <!-- 2. MANAJEMEN TIM, PEMAIN & JADWAL MATCH -->
         <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
             <div class="flex flex-wrap justify-between items-center gap-2">
@@ -97,6 +199,174 @@
                 <button onclick="toggleSetupModal()" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 px-3 py-1.5 rounded-lg font-black text-xs">
                     ➕ Tambah Tim / Buat Jadwal Match
                 </button>
+            </div>
+
+            <!-- MANAJEMEN TIM & MATCH (CRUD) -->
+            <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-violet-400">Manajemen Tim & Match (CRUD)</h2>
+                    <button onclick="toggleCrudModal()" class="bg-violet-600 hover:bg-violet-500 text-white px-3 py-1.5 rounded-lg font-black text-xs">
+                        ⚙️ Kelola Tim & Match
+                    </button>
+                </div>
+
+                <div id="crud-drawer" class="hidden bg-slate-950 p-4 rounded-xl border border-violet-800/60 space-y-5">
+                    <!-- TAB TIM -->
+                    <div class="flex gap-2 mb-4 border-b border-slate-700">
+                        <button onclick="showCrudTab('teams')" id="crud-tab-teams" class="crud-tab px-4 py-2 rounded-t-lg font-black text-xs bg-violet-600 text-white">📋 Tim</button>
+                        <button onclick="showCrudTab('matches')" id="crud-tab-matches" class="crud-tab px-4 py-2 rounded-t-lg font-black text-xs bg-slate-800 text-slate-300">📅 Match</button>
+                        <button onclick="showCrudTab('history')" id="crud-tab-history" class="crud-tab px-4 py-2 rounded-t-lg font-black text-xs bg-slate-800 text-slate-300">📜 Riwayat</button>
+                    </div>
+
+                    <!-- TIM LIST -->
+                    <div id="crud-panel-teams" class="space-y-3">
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <h3 class="text-sm font-black text-amber-400">Daftar Tim (<span id="crud-team-count">0</span>)</h3>
+                            <div class="flex items-center gap-2">
+                                <button onclick="exportTeamsExcel('template')" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg font-black text-xs">📥 Template Excel</button>
+                                <button onclick="exportTeamsExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg font-black text-xs">📤 Export Data</button>
+                                <input type="file" id="import-teams-file" accept=".xlsx,.xls" class="hidden" onchange="importTeamsExcel(event)">
+                                <button onclick="document.getElementById('import-teams-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded-lg font-black text-xs">📥 Import Excel</button>
+                                <button onclick="openTeamEditor()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-3 py-1.5 rounded-lg font-black text-xs">➕ Tambah Tim</button>
+                            </div>
+                        </div>
+                        <div id="crud-teams-list" class="max-h-96 overflow-y-auto space-y-2"></div>
+                    </div>
+
+                    <!-- MATCH LIST -->
+                    <div id="crud-panel-matches" class="hidden space-y-3">
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <h3 class="text-sm font-black text-cyan-400">Daftar Match (<span id="crud-match-count">0</span>)</h3>
+                            <div class="flex items-center gap-2">
+                                <button onclick="exportMatchesExcel('template')" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg font-black text-xs">📥 Template Excel</button>
+                                <button onclick="exportMatchesExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg font-black text-xs">📤 Export Data</button>
+                                <input type="file" id="import-matches-file" accept=".xlsx,.xls" class="hidden" onchange="importMatchesExcel(event)">
+                                <button onclick="document.getElementById('import-matches-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded-lg font-black text-xs">📥 Import Excel</button>
+                                <button onclick="openMatchEditor()" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 px-3 py-1.5 rounded-lg font-black text-xs">➕ Tambah Match</button>
+                            </div>
+                        </div>
+                        <div id="crud-matches-list" class="max-h-96 overflow-y-auto space-y-2"></div>
+                    </div>
+
+                    <!-- HISTORY LIST -->
+                    <div id="crud-panel-history" class="hidden space-y-3">
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <h3 class="text-sm font-black text-emerald-400">Riwayat Match (<span id="crud-history-count">0</span>)</h3>
+                            <div class="flex items-center gap-2">
+                                <button onclick="exportHistoryExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded-lg font-black text-xs">📤 Export Data</button>
+                                <button onclick="fetchHistory()" class="bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-black text-xs">🔄 Refresh</button>
+                            </div>
+                        </div>
+                        <div id="crud-history-list" class="max-h-96 overflow-y-auto space-y-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TEAM EDITOR MODAL -->
+            <div id="team-editor-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div class="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-md p-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 id="team-editor-title" class="text-lg font-black text-amber-400">Tambah Tim</h3>
+                        <button onclick="closeTeamEditor()" class="text-slate-400 hover:text-white text-xl">✕</button>
+                    </div>
+                    <input type="hidden" id="team-editor-id">
+                    <input type="hidden" id="team-editor-sport">
+                    <div class="space-y-2">
+                        <label class="block text-xs text-slate-400">Nama Tim</label>
+                        <input type="text" id="team-editor-name" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" placeholder="Nama Tim">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-2">
+                            <label class="block text-xs text-slate-400">Warna Baju</label>
+                            <input type="color" id="team-editor-shirt" class="w-full h-10 rounded cursor-pointer bg-transparent border-0">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs text-slate-400">Warna Celana</label>
+                            <input type="color" id="team-editor-shorts" class="w-full h-10 rounded cursor-pointer bg-transparent border-0">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button onclick="closeTeamEditor()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-black text-xs">Batal</button>
+                        <button onclick="openPlayerManager()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-black text-xs">👥 Kelola Pemain</button>
+                        <button onclick="saveTeamEditor()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 px-4 py-2 rounded-lg font-black text-xs">💾 Simpan</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PLAYER MANAGER MODAL -->
+            <div id="player-manager-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div class="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-lg max-h-[80vh] p-6 space-y-4 overflow-y-auto">
+                    <div class="flex justify-between items-center">
+                        <h3 id="player-manager-title" class="text-lg font-black text-violet-400">Kelola Pemain</h3>
+                        <button onclick="closePlayerManager()" class="text-slate-400 hover:text-white text-xl">✕</button>
+                    </div>
+                    <input type="hidden" id="player-manager-team-id">
+                    <input type="hidden" id="player-manager-team-name">
+                    <div class="space-y-2">
+                        <label class="block text-xs text-slate-400">Tambah Pemain</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="player-input-number" placeholder="No" class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" min="1" max="99">
+                            <input type="text" id="player-input-name" placeholder="Nama Pemain" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                            <button onclick="addPlayerToTeam()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs whitespace-nowrap">Tambah</button>
+                        </div>
+                    </div>
+                    <div class="border-t border-slate-800 pt-3">
+                        <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
+                            <span class="text-xs font-bold text-slate-300">Daftar Pemain (<span id="player-manager-count">0</span>)</span>
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="exportPlayersExcel('template')" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded text-[10px] font-bold">📥 Template</button>
+                                <button onclick="exportPlayersExcel('data')" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-[10px] font-bold">📤 Export</button>
+                                <input type="file" id="import-players-file" accept=".xlsx,.xls" class="hidden" onchange="importPlayersExcel(event)">
+                                <button onclick="document.getElementById('import-players-file').click()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded text-[10px] font-bold">📥 Import</button>
+                                <button onclick="bulkImportPlayers()" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded text-[10px] font-bold">📝 Text Import</button>
+                            </div>
+                        </div>
+                        <div id="player-manager-list" class="max-h-64 overflow-y-auto space-y-1.5"></div>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+                        <button onclick="closePlayerManager()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-black text-xs">Tutup</button>
+                        <button onclick="savePlayerManager()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-black text-xs">💾 Simpan ke Database</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MATCH EDITOR MODAL -->
+            <div id="match-editor-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div class="bg-slate-900 rounded-2xl border border-slate-700 w-full max-w-md p-6 space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 id="match-editor-title" class="text-lg font-black text-cyan-400">Tambah Match</h3>
+                        <button onclick="closeMatchEditor()" class="text-slate-400 hover:text-white text-xl">✕</button>
+                    </div>
+                    <input type="hidden" id="match-editor-id">
+                    <div class="space-y-2">
+                        <label class="block text-xs text-slate-400">Babak</label>
+                        <select id="match-editor-round" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white">
+                            <option value="Penyisihan">Penyisihan</option>
+                            <option value="16 Besar">16 Besar</option>
+                            <option value="8 Besar">8 Besar</option>
+                            <option value="Semifinal">Semifinal</option>
+                            <option value="Final">Final / Juara 3</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-xs text-slate-400">Keterangan Match</label>
+                        <input type="text" id="match-editor-title-input" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white" placeholder="Misal: Match 1">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-2">
+                            <label class="block text-xs text-amber-400">Tim Home</label>
+                            <select id="match-editor-home" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs text-cyan-400">Tim Away</label>
+                            <select id="match-editor-away" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"></select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2">
+                        <button onclick="closeMatchEditor()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-black text-xs">Batal</button>
+                        <button onclick="saveMatchEditor()" class="bg-cyan-600 hover:bg-cyan-500 text-slate-950 px-4 py-2 rounded-lg font-black text-xs">💾 Simpan</button>
+                    </div>
+                </div>
             </div>
 
             <!-- PANEL INPUT TIM & JADWAL -->
@@ -413,6 +683,55 @@
             </div>
         </section>
 
+        <!-- 5. OVERLAY TAMBAHAN (GOAL SCORER, KARTU KUNING, STRATEGI, VERSUS) -->
+        <section class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-rose-400">5. Overlay Tambahan</h2>
+            
+            <!-- Goal Scorer -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">⚽ Goal Scorer Overlay</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <input type="text" id="goal_scorer_name" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Pencetak Gol">
+                    <input type="text" id="goal_scorer_team" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Tim">
+                    <input type="number" id="goal_scorer_minute" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Menit" min="1" max="120" value="1">
+                    <input type="text" id="goal_scorer_assist" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Assist (opsional)">
+                </div>
+                <button onclick="triggerGoalScorer()" class="bg-amber-600 hover:bg-amber-500 w-full py-2 rounded-lg font-black text-xs">📺 Tampilkan Goal Scorer</button>
+            </div>
+
+            <!-- Yellow Card -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-yellow-400">🟨 Kartu Kuning Overlay (Di Bawah Skor)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <select id="yellow_card_side" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        <option value="home">Tim Home</option>
+                        <option value="away">Tim Away</option>
+                    </select>
+                    <input type="text" id="yellow_card_player" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Pemain (contoh: #10 NAMA)">
+                    <input type="text" id="yellow_card_team" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Tim">
+                </div>
+                <button onclick="triggerYellowCard()" class="bg-yellow-500 hover:bg-yellow-400 text-slate-950 w-full py-2 rounded-lg font-black text-xs">📺 Tampilkan Kartu Kuning</button>
+            </div>
+
+            <!-- Team Strategy -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-violet-400">📋 Team Strategy Overlay</h3>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="showTeamStrategyOverlay()" class="bg-violet-600 hover:bg-violet-500 px-4 py-2 rounded-lg font-bold text-xs">📋 Tampilkan Strategi</button>
+                    <button onclick="hideTeamStrategyOverlay()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">✕ Sembunyikan</button>
+                </div>
+            </div>
+
+            <!-- Team Versus -->
+            <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400">🏟️ Team List & Versus Overlay</h3>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="showTeamVersusOverlay()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-lg font-bold text-xs">🏟️ Tampilkan Versus</button>
+                    <button onclick="hideTeamVersusOverlay()" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-xs">✕ Sembunyikan</button>
+                </div>
+            </div>
+        </section>
+
         <!-- FOOTER SIMPAN -->
         <div class="fixed bottom-0 left-0 w-full bg-slate-900/95 backdrop-blur border-t border-slate-800 p-3 z-40">
             <div class="max-w-5xl mx-auto flex justify-between items-center">
@@ -447,6 +766,7 @@
             red_penalty_team: '',
             red_penalty_seconds: 120,
             red_started_at: null,
+            red_penalty_timer_started_at: null,
             pen_active: false,
             home_pens: [],
             away_pens: [],
@@ -456,6 +776,7 @@
         };
         let dbMatches = [];
         let dbTeams = [];
+        let dbHistory = [];
         let filteredMatchesCache = [];
 
         let localTimerSeconds = 1200;
@@ -495,11 +816,18 @@
 
         function computeSyncedRedSeconds() {
             let baseSecs = parseInt(extraObj.red_penalty_seconds) || 120;
-            if (extraObj.red_penalty_active && localTimerStatus === 'running' && extraObj.red_started_at) {
-                const elapsed = Math.floor((Date.now() - parseInt(extraObj.red_started_at)) / 1000);
+            if (extraObj.red_penalty_active && extraObj.red_penalty_timer_started_at) {
+                const elapsed = Math.floor((Date.now() - parseInt(extraObj.red_penalty_timer_started_at)) / 1000);
                 return Math.max(0, baseSecs - elapsed);
             }
             return baseSecs;
+        }
+
+        function syncTimerState() {
+            if (localTimerStatus === 'running' && extraObj.timer_started_at) {
+                localTimerSeconds = computeSyncedTimerSeconds();
+                stateData.timer_seconds = localTimerSeconds;
+            }
         }
 
         let liveTimeoutRemain = 60;
@@ -509,16 +837,17 @@
             if (localTimerStatus === 'running') {
                 localTimerSeconds = computeSyncedTimerSeconds();
                 updateTimerUI();
+            }
 
-                if (extraObj.red_penalty_active) {
-                    liveRedRemain = computeSyncedRedSeconds();
+            if (extraObj.red_penalty_active) {
+                liveRedRemain = computeSyncedRedSeconds();
+                updateRedPenaltyUI();
+                if (liveRedRemain === 0) {
+                    extraObj.red_penalty_active = false;
+                    extraObj.red_started_at = null;
+                    extraObj.red_penalty_timer_started_at = null;
                     updateRedPenaltyUI();
-                    if (liveRedRemain === 0) {
-                        extraObj.red_penalty_active = false;
-                        extraObj.red_started_at = null;
-                        updateRedPenaltyUI();
-                        saveChanges();
-                    }
+                    saveChanges();
                 }
             }
 
@@ -565,16 +894,7 @@
         }
 
         function startTimeout(side) {
-            if (localTimerStatus === 'running') {
-                localTimerSeconds = computeSyncedTimerSeconds();
-                stateData.timer_seconds = localTimerSeconds;
-                extraObj.timer_started_at = null;
-                if (extraObj.red_penalty_active) {
-                    liveRedRemain = computeSyncedRedSeconds();
-                    extraObj.red_penalty_seconds = liveRedRemain;
-                    extraObj.red_started_at = null;
-                }
-            }
+            syncTimerState();
             localTimerStatus = 'paused';
             updateTimerUI();
 
@@ -616,6 +936,7 @@
 
         // ==================== SISTEM BABAK & MODE PROYEKTOR ====================
         function setMatchHalf(halfLabel, isSecondLeg) {
+            syncTimerState();
             document.getElementById('match_name').value = halfLabel;
 
             if (halfLabel !== 'ADU PENALTI') {
@@ -666,9 +987,9 @@
         // ==================== DAFTAR PEMAIN & KARTU KUNING / MERAH ====================
         function parsePlayersText(rawText) {
             return (rawText || "").split('\n').map(l => l.trim()).filter(Boolean).map(line => {
-                const parts = line.split('-');
-                if (parts.length >= 2) {
-                    return { number: parts[0].trim(), name: parts.slice(1).join('-').trim().toUpperCase() };
+                const idx = line.indexOf(' - ');
+                if (idx > 0) {
+                    return { number: line.slice(0, idx).trim(), name: line.slice(idx + 3).trim().toUpperCase() };
                 }
                 return { number: '', name: line.toUpperCase() };
             });
@@ -676,6 +997,15 @@
 
         function playersArrayToText(arr) {
             return (arr || []).map(p => p.number ? `${p.number} - ${p.name}` : p.name).join('\n');
+        }
+
+        function getPositionLabel(num) {
+            const n = parseInt(num);
+            if (n === 1) return 'GK';
+            if (n >= 2 && n <= 5) return 'DEF';
+            if (n >= 6 && n <= 10) return 'MID';
+            if (n >= 11) return 'FWD';
+            return 'PLR';
         }
 
         async function saveTeamPlayers(side) {
@@ -745,6 +1075,7 @@
                 extraObj.red_penalty_team = teamName;
                 extraObj.red_penalty_seconds = 120;
                 extraObj.red_started_at = (localTimerStatus === 'running') ? Date.now() : null;
+                extraObj.red_penalty_timer_started_at = Date.now();
                 liveRedRemain = 120;
                 updateRedPenaltyUI();
             }
@@ -757,6 +1088,7 @@
             extraObj.red_penalty_active = false;
             extraObj.red_penalty_seconds = 120;
             extraObj.red_started_at = null;
+            extraObj.red_penalty_timer_started_at = null;
             liveRedRemain = 120;
             updateRedPenaltyUI();
             saveChanges();
@@ -827,27 +1159,64 @@
             }
         }
 
-        supabaseClient
-            .channel('control:tournament_state')
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
-                if (payload.new && payload.new.extra_data) {
-                    try {
-                        const incomingExtra = (typeof payload.new.extra_data === 'string')
-                            ? JSON.parse(payload.new.extra_data)
-                            : payload.new.extra_data;
-                        if (typeof incomingExtra.projector_opposite !== 'undefined') {
-                            extraObj.projector_opposite = incomingExtra.projector_opposite;
-                            updateProjectorOppositeUI();
-                            updateLivePreview();
-                        }
-                        if (typeof incomingExtra.obs_is_live !== 'undefined') {
-                            extraObj.obs_is_live = incomingExtra.obs_is_live;
-                            updateObsLiveBadge(Boolean(incomingExtra.obs_is_live));
-                        }
-                    } catch(e){}
-                }
-            })
-            .subscribe();
+        let controlChannel = null;
+        let controlReconnectAttempt = 0;
+        let controlMaxReconnectDelay = 30000;
+
+        function setupControlChannel() {
+            controlChannel = supabaseClient
+                .channel('control:tournament_state')
+                .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournament_state' }, payload => {
+                    if (payload.new && payload.new.extra_data) {
+                        try {
+                            const incomingExtra = (typeof payload.new.extra_data === 'string')
+                                ? JSON.parse(payload.new.extra_data)
+                                : payload.new.extra_data;
+                            if (typeof incomingExtra.projector_opposite !== 'undefined') {
+                                extraObj.projector_opposite = incomingExtra.projector_opposite;
+                                updateProjectorOppositeUI();
+                                updateLivePreview();
+                            }
+                            if (typeof incomingExtra.obs_is_live !== 'undefined') {
+                                extraObj.obs_is_live = incomingExtra.obs_is_live;
+                                updateObsLiveBadge(Boolean(incomingExtra.obs_is_live));
+                            }
+                        } catch(e){}
+                    }
+                })
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        controlReconnectAttempt = 0;
+                        updateControlConnectionStatus(true);
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        updateControlConnectionStatus(false);
+                        scheduleControlReconnect();
+                    }
+                });
+        }
+
+        function scheduleControlReconnect() {
+            if (controlChannel) {
+                controlChannel.unsubscribe();
+            }
+            const delay = Math.min(1000 * Math.pow(2, controlReconnectAttempt), controlMaxReconnectDelay);
+            controlReconnectAttempt++;
+            setTimeout(setupControlChannel, delay);
+        }
+
+        function updateControlConnectionStatus(connected) {
+            const badge = document.getElementById('sync-status');
+            if (!badge) return;
+            if (connected) {
+                badge.innerText = "Tersinkron ✔";
+                badge.className = "text-xs bg-emerald-600 px-3 py-1.5 rounded-full font-bold";
+            } else {
+                badge.innerText = "Terputus - Menyambungkan...";
+                badge.className = "text-xs bg-amber-600 px-3 py-1.5 rounded-full font-bold animate-pulse";
+            }
+        }
+
+        setupControlChannel();
 
         async function fetchTeams() {
             let { data } = await supabaseClient.from('teams').select('*').order('team_name', { ascending: true });
@@ -935,6 +1304,977 @@
             } else {
                 alert("Gagal membuat jadwal: " + error.message);
             }
+        }
+
+        // ==================== CRUD TIM & MATCH ====================
+        function toggleCrudModal() {
+            document.getElementById('crud-drawer').classList.toggle('hidden');
+            if (!document.getElementById('crud-drawer').classList.contains('hidden')) {
+                renderCrudTeams();
+                renderCrudMatches();
+            }
+        }
+
+        function showCrudTab(tab) {
+            document.querySelectorAll('.crud-tab').forEach(b => {
+                b.classList.remove('bg-violet-600', 'text-white');
+                b.classList.add('bg-slate-800', 'text-slate-300');
+            });
+            document.getElementById('crud-tab-' + tab).classList.remove('bg-slate-800', 'text-slate-300');
+            document.getElementById('crud-tab-' + tab).classList.add('bg-violet-600', 'text-white');
+            document.getElementById('crud-panel-teams').classList.toggle('hidden', tab !== 'teams');
+            document.getElementById('crud-panel-matches').classList.toggle('hidden', tab !== 'matches');
+            document.getElementById('crud-panel-history').classList.toggle('hidden', tab !== 'history');
+            if (tab === 'history') fetchHistory();
+        }
+
+        function renderCrudTeams() {
+            let sport = stateData.sport_type || 'futsal';
+            let sportTeams = dbTeams.filter(t => t.sport_type === sport);
+            document.getElementById('crud-team-count').innerText = sportTeams.length;
+            let container = document.getElementById('crud-teams-list');
+            container.innerHTML = '';
+            sportTeams.forEach(t => {
+                let div = document.createElement('div');
+                div.className = 'bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-wrap items-center justify-between gap-2';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="w-6 h-8 rounded overflow-hidden border border-white/20 flex flex-col flex-shrink-0">
+                            <span class="h-5 w-full" style="background:${t.team_color || '#f59e0b'}"></span>
+                            <span class="h-3 w-full border-t border-black/30" style="background:${t.team_shorts_color || '#1e293b'}"></span>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="font-bold text-white truncate">${t.team_name}</div>
+                            <div class="text-[10px] text-slate-400">ID: ${t.id} | ${t.players ? t.players.length : 0} pemain</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="openPlayerManagerForTeam(${t.id})" class="bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded text-[10px] font-bold">👥 Pemain</button>
+                        <button onclick="openTeamEditor(${t.id})" class="bg-violet-600 hover:bg-violet-500 px-3 py-1.5 rounded text-[10px] font-bold">Edit</button>
+                        <button onclick="deleteTeam(${t.id})" class="bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded text-[10px] font-bold">Hapus</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderCrudMatches() {
+            let sport = stateData.sport_type || 'futsal';
+            let sportMatches = dbMatches.filter(m => m.sport_type === sport);
+            document.getElementById('crud-match-count').innerText = sportMatches.length;
+            let container = document.getElementById('crud-matches-list');
+            container.innerHTML = '';
+            sportMatches.forEach(m => {
+                let div = document.createElement('div');
+                div.className = 'bg-slate-900 p-3 rounded-lg border border-slate-700 flex flex-wrap items-center justify-between gap-2';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <div class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-amber-400">${m.round_name}</div>
+                        <div class="min-w-0">
+                            <div class="font-bold text-white truncate">${m.match_title}: ${m.home_team} vs ${m.away_team}</div>
+                            <div class="text-[10px] text-slate-400">ID: ${m.id}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="openMatchEditor(${m.id})" class="bg-violet-600 hover:bg-violet-500 px-3 py-1.5 rounded text-[10px] font-bold">Edit</button>
+                        <button onclick="deleteMatch(${m.id})" class="bg-rose-600 hover:bg-rose-500 px-3 py-1.5 rounded text-[10px] font-bold">Hapus</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // HISTORY
+        async function fetchHistory() {
+            let { data, error } = await supabaseClient.from('match_history').select('*').order('timestamp', { ascending: false });
+            if (!error && data) {
+                dbHistory = data;
+                renderCrudHistory();
+            } else if (error) {
+                console.error('Fetch history error:', error);
+                document.getElementById('crud-history-list').innerHTML = `<div class="text-center text-rose-400 py-4">Gagal memuat riwayat: ${error.message}</div>`;
+            }
+        }
+
+        function renderCrudHistory() {
+            let sport = stateData.sport_type || 'futsal';
+            let sportHistory = dbHistory.filter(h => h.sport_type === sport);
+            document.getElementById('crud-history-count').innerText = sportHistory.length;
+            let container = document.getElementById('crud-history-list');
+            container.innerHTML = '';
+            if (sportHistory.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Belum ada riwayat match untuk cabang ini</div>';
+                return;
+            }
+            sportHistory.forEach(h => {
+                let detail = {};
+                try { detail = typeof h.detail_json === 'string' ? JSON.parse(h.detail_json) : (h.detail_json || {}); } catch(e) {}
+                let date = h.timestamp ? new Date(h.timestamp).toLocaleString('id-ID') : '-';
+                let div = document.createElement('div');
+                div.className = 'bg-slate-900 p-3 rounded-lg border border-slate-700';
+                div.innerHTML = `
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                        <div class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-emerald-400">${h.round_name || '-'}</div>
+                        <div class="text-[10px] text-slate-400">${date}</div>
+                    </div>
+                    <div class="font-bold text-white mb-1">${h.match_name || ''}: ${h.home_name} <span class="text-amber-400">${h.home_score}</span> - <span class="text-cyan-400">${h.away_score}</span> ${h.away_name}</div>
+                    <div class="text-[10px] text-slate-400 mb-2">Event: ${h.event_name || '-'}</div>
+                    <button onclick="showHistoryDetail(${JSON.stringify(h).replace(/"/g, '"')})" class="bg-emerald-600 hover:bg-emerald-500 px-3 py-1.5 rounded text-[10px] font-bold">👁 Detail</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function showHistoryDetail(h) {
+            let detail = {};
+            try { detail = typeof h.detail_json === 'string' ? JSON.parse(h.detail_json) : (h.detail_json || {}); } catch(e) {}
+            let date = h.timestamp ? new Date(h.timestamp).toLocaleString('id-ID') : '-';
+            let lines = [
+                `Event: ${h.event_name || '-'}`,
+                `Match: ${h.match_name || '-'}`,
+                `Round: ${h.round_name || '-'}`,
+                `Date: ${date}`,
+                `${h.home_name} ${h.home_score} - ${h.away_score} ${h.away_name}`,
+                `Sport: ${h.sport_type || '-'}`,
+                '',
+                'Detail Lengkap:',
+                `Foul Home: ${detail.home_foul || 0}`,
+                `Foul Away: ${detail.away_foul || 0}`,
+                `Time-Out Home: ${detail.home_to_used ? 'Ya' : 'Tidak'}`,
+                `Time-Out Away: ${detail.away_to_used ? 'Ya' : 'Tidak'}`,
+                `Penalti Aktif: ${detail.pen_active ? 'Ya' : 'Tidak'}`,
+                `Penalti Home: ${(detail.home_pens || []).join(', ') || '-'}`,
+                `Penalti Away: ${(detail.away_pens || []).join(', ') || '-'}`,
+                `Kartu: ${detail.card_event ? `${detail.card_event.color} - ${detail.card_event.player} (${detail.card_event.team})` : 'Tidak ada'}`,
+            ];
+            alert(lines.join('\n'));
+        }
+
+        // ==================== EXCEL IMPORT/EXPORT ====================
+        function exportTeamsExcel(type) {
+            let sport = stateData.sport_type || 'futsal';
+            let sportTeams = dbTeams.filter(t => t.sport_type === sport);
+            let wb = XLSX.utils.book_new();
+            let rows = [];
+
+            if (type === 'template') {
+                rows.push(['team_name', 'team_color', 'team_shorts_color', 'sport_type', 'players_json']);
+                rows.push(['CONTOH TIM', '#f59e0b', '#1e293b', sport, '[{"number":"10","name":"NAMA PEMAIN"}]']);
+            } else {
+                rows.push(['team_name', 'team_color', 'team_shorts_color', 'sport_type', 'players_json']);
+                sportTeams.forEach(t => {
+                    let playersJson = t.players ? JSON.stringify(t.players) : '[]';
+                    rows.push([t.team_name, t.team_color || '#f59e0b', t.team_shorts_color || '#1e293b', t.sport_type, playersJson]);
+                });
+            }
+
+            let ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'Teams');
+            let filename = `teams_${sport}_${type}_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        function importTeamsExcel(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = async function(e) {
+                let data = new Uint8Array(e.target.result);
+                let wb = XLSX.read(data, { type: 'array' });
+                let ws = wb.Sheets[wb.SheetNames[0]];
+                let rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+                if (rows.length < 2) return alert('File kosong atau tidak valid!');
+
+                let sport = stateData.sport_type || 'futsal';
+                let headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+                let nameIdx = headers.indexOf('team_name');
+                let colorIdx = headers.indexOf('team_color');
+                let shortsIdx = headers.indexOf('team_shorts_color');
+                let sportIdx = headers.indexOf('sport_type');
+                let playersIdx = headers.indexOf('players_json');
+
+                if (nameIdx === -1) return alert('Kolom team_name wajib ada!');
+
+                let success = 0, errors = [];
+                for (let i = 1; i < rows.length; i++) {
+                    let row = rows[i];
+                    let name = (row[nameIdx] || '').toString().trim();
+                    if (!name) continue;
+                    let color = (row[colorIdx] || '#f59e0b').toString().trim();
+                    let shorts = (row[shortsIdx] || '#1e293b').toString().trim();
+                    let rowSport = (row[sportIdx] || sport).toString().trim();
+                    let playersJson = (row[playersIdx] || '[]').toString().trim();
+                    let players = [];
+                    try { players = JSON.parse(playersJson); } catch(e) { players = []; }
+
+                    let { error } = await supabaseClient.from('teams').upsert([{
+                        sport_type: rowSport,
+                        team_name: name,
+                        team_color: color,
+                        team_shorts_color: shorts,
+                        players: players
+                    }], { onConflict: 'sport_type,team_name' });
+
+                    if (!error) success++;
+                    else errors.push(`${name}: ${error.message}`);
+                }
+
+                document.getElementById('import-teams-file').value = '';
+                await fetchTeams();
+                populateTeamDropdowns();
+                renderCrudTeams();
+                alert(`Import selesai: ${success} tim berhasil${errors.length ? ', ' + errors.length + ' gagal: ' + errors.join('; ') : ''}`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportMatchesExcel(type) {
+            let sport = stateData.sport_type || 'futsal';
+            let sportMatches = dbMatches.filter(m => m.sport_type === sport);
+            let wb = XLSX.utils.book_new();
+            let rows = [];
+
+            if (type === 'template') {
+                rows.push(['round_name', 'match_title', 'home_team', 'away_team', 'sport_type']);
+                rows.push(['Penyisihan', 'Match 1', 'TIM A', 'TIM B', sport]);
+            } else {
+                rows.push(['round_name', 'match_title', 'home_team', 'away_team', 'sport_type']);
+                sportMatches.forEach(m => {
+                    rows.push([m.round_name, m.match_title, m.home_team, m.away_team, m.sport_type]);
+                });
+            }
+
+            let ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'Matches');
+            let filename = `matches_${sport}_${type}_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        function importMatchesExcel(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = async function(e) {
+                let data = new Uint8Array(e.target.result);
+                let wb = XLSX.read(data, { type: 'array' });
+                let ws = wb.Sheets[wb.SheetNames[0]];
+                let rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+                if (rows.length < 2) return alert('File kosong atau tidak valid!');
+
+                let sport = stateData.sport_type || 'futsal';
+                let headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+                let roundIdx = headers.indexOf('round_name');
+                let titleIdx = headers.indexOf('match_title');
+                let homeIdx = headers.indexOf('home_team');
+                let awayIdx = headers.indexOf('away_team');
+                let sportIdx = headers.indexOf('sport_type');
+
+                if (roundIdx === -1 || homeIdx === -1 || awayIdx === -1) {
+                    return alert('Kolom round_name, home_team, away_team wajib ada!');
+                }
+
+                let success = 0, errors = [];
+                for (let i = 1; i < rows.length; i++) {
+                    let row = rows[i];
+                    let round = (row[roundIdx] || 'Penyisihan').toString().trim();
+                    let title = (row[titleIdx] || 'Match').toString().trim();
+                    let home = (row[homeIdx] || '').toString().trim();
+                    let away = (row[awayIdx] || '').toString().trim();
+                    let rowSport = (row[sportIdx] || sport).toString().trim();
+
+                    if (!home || !away) { errors.push(`Baris ${i+1}: Home/Away kosong`); continue; }
+                    if (home === away) { errors.push(`Baris ${i+1}: Home dan Away sama`); continue; }
+
+                    let { error } = await supabaseClient.from('matches').insert([{
+                        sport_type: rowSport,
+                        round_name: round,
+                        match_title: title,
+                        home_team: home,
+                        away_team: away
+                    }]);
+
+                    if (!error) success++;
+                    else errors.push(`${home} vs ${away}: ${error.message}`);
+                }
+
+                document.getElementById('import-matches-file').value = '';
+                await fetchMatches();
+                filterMatchesByRound();
+                renderCrudMatches();
+                alert(`Import selesai: ${success} match berhasil${errors.length ? ', ' + errors.length + ' gagal: ' + errors.join('; ') : ''}`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportHistoryExcel(type) {
+            let sport = stateData.sport_type || 'futsal';
+            let sportHistory = dbHistory.filter(h => h.sport_type === sport);
+            let wb = XLSX.utils.book_new();
+            let rows = [];
+
+            rows.push(['timestamp', 'event_name', 'match_name', 'round_name', 'home_name', 'home_score', 'away_name', 'away_score', 'sport_type', 'detail_json']);
+            sportHistory.forEach(h => {
+                rows.push([
+                    h.timestamp || '',
+                    h.event_name || '',
+                    h.match_name || '',
+                    h.round_name || '',
+                    h.home_name || '',
+                    h.home_score || 0,
+                    h.away_name || '',
+                    h.away_score || 0,
+                    h.sport_type || '',
+                    h.detail_json || '{}'
+                ]);
+            });
+
+            let ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'History');
+            let filename = `history_${sport}_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        function exportPlayersExcel(type) {
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let teamName = document.getElementById('player-manager-team-name').value;
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return alert('Tim tidak ditemukan!');
+            let players = team.players || [];
+            let wb = XLSX.utils.book_new();
+            let rows = [];
+
+            if (type === 'template') {
+                rows.push(['number', 'name']);
+                rows.push(['10', 'NAMA PEMAIN']);
+                rows.push(['7', 'NAMA PEMAIN 2']);
+            } else {
+                rows.push(['number', 'name']);
+                players.forEach(p => {
+                    rows.push([p.number || '', p.name || '']);
+                });
+            }
+
+            let ws = XLSX.utils.aoa_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, ws, 'Players');
+            let safeName = teamName.replace(/[^a-zA-Z0-9]/g, '_');
+            let filename = `players_${safeName}_${type}_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        function importPlayersExcel(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return alert('Tim tidak ditemukan!');
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let wb = XLSX.read(data, { type: 'array' });
+                let ws = wb.Sheets[wb.SheetNames[0]];
+                let rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+                if (rows.length < 2) return alert('File kosong atau tidak valid!');
+
+                let headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+                let numberIdx = headers.indexOf('number');
+                let nameIdx = headers.indexOf('name');
+
+                if (nameIdx === -1) return alert('Kolom name wajib ada!');
+
+                let players = team.players || [];
+                let added = 0, errors = [];
+                for (let i = 1; i < rows.length; i++) {
+                    let row = rows[i];
+                    let name = (row[nameIdx] || '').toString().trim().toUpperCase();
+                    if (!name) continue;
+                    let number = numberIdx >= 0 ? (row[numberIdx] || '').toString().trim() : '';
+                    if (number && players.some(p => p.number === number)) {
+                        errors.push(`Baris ${i+1}: Nomor ${number} sudah ada`);
+                        continue;
+                    }
+                    players.push({ number: number || '', name });
+                    added++;
+                }
+                renderPlayerManagerList(players);
+                document.getElementById('import-players-file').value = '';
+                alert(`Import pemain: ${added} ditambahkan${errors.length ? ', ' + errors.join('; ') : ''}`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ==================== MANAGER DASHBOARD ====================
+        let mgrSelectedTeamId = null;
+
+        function refreshManagerDashboard() {
+            loadManagerTeams();
+        }
+
+        function loadManagerTeams() {
+            let sport = document.getElementById('mgr-sport-filter').value;
+            let sportTeams = dbTeams.filter(t => t.sport_type === sport);
+            let select = document.getElementById('mgr-team-select');
+            select.innerHTML = '<option value="">-- Pilih Tim --</option>';
+            sportTeams.forEach(t => {
+                let opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = `${t.team_name} (${t.players?.length || 0} pemain)`;
+                select.appendChild(opt);
+            });
+            // Reset detail panels
+            document.getElementById('mgr-team-detail').classList.add('hidden');
+            document.getElementById('mgr-team-matches').classList.add('hidden');
+            document.getElementById('mgr-broadcast-ready').classList.add('hidden');
+            document.getElementById('mgr-btn-edit-team').disabled = true;
+        }
+
+        function loadManagerTeamDetail() {
+            let teamId = document.getElementById('mgr-team-select').value;
+            if (!teamId) {
+                document.getElementById('mgr-team-detail').classList.add('hidden');
+                document.getElementById('mgr-team-matches').classList.add('hidden');
+                document.getElementById('mgr-broadcast-ready').classList.add('hidden');
+                document.getElementById('mgr-btn-edit-team').disabled = true;
+                mgrSelectedTeamId = null;
+                return;
+            }
+            mgrSelectedTeamId = teamId;
+            document.getElementById('mgr-btn-edit-team').disabled = false;
+
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+
+            // Update team badge
+            document.getElementById('mgr-team-name').innerText = team.team_name;
+            document.getElementById('mgr-team-shirt').style.background = team.team_color || '#f59e0b';
+            document.getElementById('mgr-team-shorts').style.background = team.team_shorts_color || '#1e293b';
+            let players = team.players || [];
+            document.getElementById('mgr-player-count').innerText = players.length;
+
+            // Count matches for this team
+            let sport = stateData.sport_type || 'futsal';
+            let teamMatches = dbMatches.filter(m => m.sport_type === sport && (m.home_team === team.team_name || m.away_team === team.team_name));
+            let teamHistory = dbHistory.filter(h => h.sport_type === sport && (h.home_name === team.team_name || h.away_name === team.team_name));
+            document.getElementById('mgr-team-meta').innerText = `${players.length} Pemain | ${teamMatches.length} Match | ${teamHistory.length} Riwayat`;
+
+            // Render player list
+            renderManagerPlayerList(players);
+
+            // Render matches for this team
+            renderManagerTeamMatches(teamMatches);
+
+            // Show panels
+            document.getElementById('mgr-team-detail').classList.remove('hidden');
+            document.getElementById('mgr-team-matches').classList.remove('hidden');
+        }
+
+        function renderManagerPlayerList(players) {
+            let container = document.getElementById('mgr-player-list');
+            container.innerHTML = '';
+            if (players.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Belum ada pemain. Klik 👥 Kelola Pemain atau 📥 Import Excel</div>';
+                return;
+            }
+            let sorted = [...players].sort((a, b) => (parseInt(a.number) || 99) - (parseInt(b.number) || 99));
+            sorted.forEach(p => {
+                let div = document.createElement('div');
+                div.className = 'flex items-center gap-2 p-1.5 bg-slate-800/50 rounded border border-slate-700/50';
+                div.innerHTML = `
+                    <span class="w-7 text-center text-xs font-mono text-amber-400 font-bold">${p.number || '-'}</span>
+                    <span class="text-white text-sm truncate flex-1">${p.name}</span>
+                    <span class="text-[10px] text-slate-500">${getPositionLabel(p.number)}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderManagerTeamMatches(matches) {
+            let container = document.getElementById('mgr-match-list');
+            container.innerHTML = '';
+            if (matches.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Belum ada match untuk tim ini. Klik ➕ Buat Match Baru</div>';
+                return;
+            }
+            matches.forEach(m => {
+                let isHome = m.home_team === document.getElementById('mgr-team-name').innerText;
+                let opponent = isHome ? m.away_team : m.home_team;
+                let div = document.createElement('div');
+                div.className = 'bg-slate-900 p-3 rounded-lg border border-slate-700 cursor-pointer hover:border-amber-500/50 transition-colors';
+                div.onclick = () => selectManagerMatch(m.id);
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-amber-400">${m.round_name}</span>
+                            <span class="font-bold text-white">${isHome ? '🏠' : '🚌'} vs ${opponent}</span>
+                        </div>
+                        <span class="text-[10px] text-slate-400">${m.match_title}</span>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        let mgrSelectedMatchId = null;
+
+        function selectManagerMatch(matchId) {
+            mgrSelectedMatchId = matchId;
+            document.querySelectorAll('#mgr-match-list > div').forEach(d => {
+                d.classList.remove('border-amber-500', 'bg-amber-500/10');
+            });
+            event.currentTarget.classList.add('border-amber-500', 'bg-amber-500/10');
+            document.getElementById('mgr-btn-load-match').disabled = false;
+
+            let match = dbMatches.find(m => m.id === matchId);
+            if (match) {
+                document.getElementById('mgr-bc-home').innerText = match.home_team;
+                document.getElementById('mgr-bc-away').innerText = match.away_team;
+                document.getElementById('mgr-bc-round').innerText = match.round_name;
+                document.getElementById('mgr-bc-title').innerText = match.match_title;
+                document.getElementById('mgr-broadcast-ready').classList.remove('hidden');
+            }
+        }
+
+        function openTeamEditorForManager() {
+            if (mgrSelectedTeamId) openTeamEditor(mgrSelectedTeamId);
+        }
+
+        function openPlayerManagerForManager() {
+            if (mgrSelectedTeamId) openPlayerManagerForTeam(mgrSelectedTeamId);
+        }
+
+        function importPlayersForManager(event) {
+            let file = event.target.files[0];
+            if (!file || !mgrSelectedTeamId) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let data = new Uint8Array(e.target.result);
+                let wb = XLSX.read(data, { type: 'array' });
+                let ws = wb.Sheets[wb.SheetNames[0]];
+                let rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false });
+                if (rows.length < 2) return alert('File kosong atau tidak valid!');
+
+                let headers = rows[0].map(h => (h || '').toString().trim().toLowerCase());
+                let numberIdx = headers.indexOf('number');
+                let nameIdx = headers.indexOf('name');
+                if (nameIdx === -1) return alert('Kolom name wajib ada!');
+
+                let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+                if (!team) return;
+                let players = team.players || [];
+                let added = 0, errors = [];
+                for (let i = 1; i < rows.length; i++) {
+                    let row = rows[i];
+                    let name = (row[nameIdx] || '').toString().trim().toUpperCase();
+                    if (!name) continue;
+                    let number = numberIdx >= 0 ? (row[numberIdx] || '').toString().trim() : '';
+                    if (number && players.some(p => p.number === number)) {
+                        errors.push(`Baris ${i+1}: Nomor ${number} sudah ada`);
+                        continue;
+                    }
+                    players.push({ number: number || '', name });
+                    added++;
+                }
+                renderManagerPlayerList(players);
+                document.getElementById('mgr-import-players-file').value = '';
+                alert(`Import pemain: ${added} ditambahkan${errors.length ? ', ' + errors.join('; ') : ''}`);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function createMatchForTeam() {
+            if (!mgrSelectedTeamId) return;
+            let team = dbTeams.find(t => t.id == mgrSelectedTeamId);
+            if (!team) return;
+            
+            // Pre-fill match editor with this team as home
+            document.getElementById('match-editor-id').value = '';
+            document.getElementById('match-editor-round').value = 'Penyisihan';
+            document.getElementById('match-editor-title-input').value = 'Match Baru';
+            document.getElementById('match-editor-home').value = team.team_name;
+            document.getElementById('match-editor-away').value = '';
+            document.getElementById('match-editor-title').innerText = 'Tambah Match';
+            
+            // Populate away dropdown
+            let sport = stateData.sport_type || 'futsal';
+            let sportTeams = dbTeams.filter(t => t.sport_type === sport && t.id != mgrSelectedTeamId);
+            let awaySel = document.getElementById('match-editor-away');
+            awaySel.innerHTML = '<option value="">-- Pilih Tim Away --</option>';
+            sportTeams.forEach(t => {
+                let opt = document.createElement('option');
+                opt.value = t.team_name;
+                opt.textContent = t.team_name;
+                awaySel.appendChild(opt);
+            });
+            
+            document.getElementById('match-editor-modal').classList.remove('hidden');
+        }
+
+        function loadSelectedMatchForManager() {
+            if (!mgrSelectedMatchId) return;
+            // Find the match index in filtered matches
+            let match = dbMatches.find(m => m.id === mgrSelectedMatchId);
+            if (!match) return;
+            
+            // Load to scoring panel (reuse existing function)
+            let idx = filteredMatchesCache.findIndex(m => m.id === mgrSelectedMatchId);
+            if (idx >= 0) {
+                loadSelectedMatch(idx);
+                alert(`Match "${match.match_title}" diload ke Scoring Panel!`);
+            }
+        }
+
+        function loadMatchToScoring() {
+            loadSelectedMatchForManager();
+        }
+
+        function openOverlayStrategy() {
+            // Send trigger to overlay via Supabase
+            extraObj.show_strategy_overlay = true;
+            extraObj.strategy_overlay_timestamp = Date.now();
+            saveChanges();
+        }
+
+        function openOverlayVersus() {
+            extraObj.show_versus_overlay = true;
+            extraObj.versus_overlay_timestamp = Date.now();
+            saveChanges();
+        }
+
+        // Initialize manager dashboard on sport change
+        const originalSwitchSport = switchSport;
+        switchSport = function(sport, autoSave = true) {
+            originalSwitchSport(sport, autoSave);
+            document.getElementById('mgr-sport-filter').value = sport;
+            loadManagerTeams();
+        };
+
+        // TEAM EDITOR
+        function openTeamEditor(id = null) {
+            let sport = stateData.sport_type || 'futsal';
+            document.getElementById('team-editor-sport').value = sport;
+            document.getElementById('team-editor-id').value = id || '';
+            document.getElementById('team-editor-name').value = '';
+            document.getElementById('team-editor-shirt').value = '#f59e0b';
+            document.getElementById('team-editor-shorts').value = '#1e293b';
+            document.getElementById('team-editor-title').innerText = id ? 'Edit Tim' : 'Tambah Tim';
+
+            if (id) {
+                let team = dbTeams.find(t => t.id === id);
+                if (team) {
+                    document.getElementById('team-editor-name').value = team.team_name;
+                    document.getElementById('team-editor-shirt').value = team.team_color || '#f59e0b';
+                    document.getElementById('team-editor-shorts').value = team.team_shorts_color || '#1e293b';
+                }
+            }
+            document.getElementById('team-editor-modal').classList.remove('hidden');
+        }
+
+        function closeTeamEditor() {
+            document.getElementById('team-editor-modal').classList.add('hidden');
+        }
+
+        async function saveTeamEditor() {
+            let id = document.getElementById('team-editor-id').value;
+            let name = document.getElementById('team-editor-name').value.trim();
+            let shirt = document.getElementById('team-editor-shirt').value;
+            let shorts = document.getElementById('team-editor-shorts').value;
+            let sport = document.getElementById('team-editor-sport').value;
+
+            if (!name) return alert('Nama tim wajib diisi!');
+
+            let payload = { sport_type: sport, team_name: name, team_color: shirt, team_shorts_color: shorts };
+
+            let error;
+            if (id) {
+                let { error: err } = await supabaseClient.from('teams').update(payload).eq('id', id);
+                error = err;
+            } else {
+                let { error: err } = await supabaseClient.from('teams').insert([payload]);
+                error = err;
+            }
+
+            if (!error) {
+                closeTeamEditor();
+                await fetchTeams();
+                populateTeamDropdowns();
+                renderCrudTeams();
+                alert(id ? 'Tim berhasil diupdate!' : 'Tim berhasil ditambahkan!');
+            } else {
+                alert('Gagal menyimpan tim: ' + error.message);
+            }
+        }
+
+        async function deleteTeam(id) {
+            if (!confirm('Hapus tim ini?')) return;
+            let { error } = await supabaseClient.from('teams').delete().eq('id', id);
+            if (!error) {
+                await fetchTeams();
+                populateTeamDropdowns();
+                renderCrudTeams();
+                alert('Tim berhasil dihapus!');
+            } else {
+                alert('Gagal menghapus tim: ' + error.message);
+            }
+        }
+
+        // MATCH EDITOR
+        function openMatchEditor(id = null) {
+            let sport = stateData.sport_type || 'futsal';
+            let sportTeams = dbTeams.filter(t => t.sport_type === sport);
+            let homeSel = document.getElementById('match-editor-home');
+            let awaySel = document.getElementById('match-editor-away');
+            homeSel.innerHTML = '<option value="">-- Pilih Tim Home --</option>';
+            awaySel.innerHTML = '<option value="">-- Pilih Tim Away --</option>';
+            sportTeams.forEach(t => {
+                let opt1 = document.createElement('option');
+                opt1.value = t.team_name;
+                opt1.textContent = t.team_name;
+                homeSel.appendChild(opt1);
+                let opt2 = document.createElement('option');
+                opt2.value = t.team_name;
+                opt2.textContent = t.team_name;
+                awaySel.appendChild(opt2);
+            });
+
+            document.getElementById('match-editor-id').value = id || '';
+            document.getElementById('match-editor-round').value = 'Penyisihan';
+            document.getElementById('match-editor-title-input').value = '';
+            document.getElementById('match-editor-home').value = '';
+            document.getElementById('match-editor-away').value = '';
+            document.getElementById('match-editor-title').innerText = id ? 'Edit Match' : 'Tambah Match';
+
+            if (id) {
+                let match = dbMatches.find(m => m.id === id);
+                if (match) {
+                    document.getElementById('match-editor-round').value = match.round_name;
+                    document.getElementById('match-editor-title-input').value = match.match_title;
+                    document.getElementById('match-editor-home').value = match.home_team;
+                    document.getElementById('match-editor-away').value = match.away_team;
+                }
+            }
+            document.getElementById('match-editor-modal').classList.remove('hidden');
+        }
+
+        function closeMatchEditor() {
+            document.getElementById('match-editor-modal').classList.add('hidden');
+        }
+
+        async function saveMatchEditor() {
+            let id = document.getElementById('match-editor-id').value;
+            let round = document.getElementById('match-editor-round').value;
+            let title = document.getElementById('match-editor-title-input').value.trim() || 'Match';
+            let home = document.getElementById('match-editor-home').value;
+            let away = document.getElementById('match-editor-away').value;
+            let sport = stateData.sport_type || 'futsal';
+
+            if (!home || !away) return alert('Pilih Tim Home dan Away!');
+            if (home === away) return alert('Tim Home dan Away tidak boleh sama!');
+
+            let payload = { sport_type: sport, round_name: round, match_title: title, home_team: home, away_team: away };
+
+            let error;
+            if (id) {
+                let { error: err } = await supabaseClient.from('matches').update(payload).eq('id', id);
+                error = err;
+            } else {
+                let { error: err } = await supabaseClient.from('matches').insert([payload]);
+                error = err;
+            }
+
+            if (!error) {
+                closeMatchEditor();
+                await fetchMatches();
+                filterMatchesByRound();
+                renderCrudMatches();
+                alert(id ? 'Match berhasil diupdate!' : 'Match berhasil ditambahkan!');
+            } else {
+                alert('Gagal menyimpan match: ' + error.message);
+            }
+        }
+
+        async function deleteMatch(id) {
+            if (!confirm('Hapus match ini?')) return;
+            let { error } = await supabaseClient.from('matches').delete().eq('id', id);
+            if (!error) {
+                await fetchMatches();
+                filterMatchesByRound();
+                renderCrudMatches();
+                alert('Match berhasil dihapus!');
+            } else {
+                alert('Gagal menghapus match: ' + error.message);
+            }
+        }
+
+        function openPlayerManagerForTeam(teamId) {
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+            document.getElementById('player-manager-team-id').value = teamId;
+            document.getElementById('player-manager-team-name').value = team.team_name;
+            document.getElementById('player-manager-title').innerText = `Kelola Pemain: ${team.team_name}`;
+            document.getElementById('player-input-number').value = '';
+            document.getElementById('player-input-name').value = '';
+            renderPlayerManagerList(team.players || []);
+            document.getElementById('player-manager-modal').classList.remove('hidden');
+        }
+
+        // ==================== PLAYER MANAGEMENT ====================
+        function openPlayerManager() {
+            let teamId = document.getElementById('team-editor-id').value;
+            let teamName = document.getElementById('team-editor-name').value.trim();
+            if (!teamId) {
+                alert('Simpan tim terlebih dahulu sebelum mengelola pemain!');
+                return;
+            }
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+
+            document.getElementById('player-manager-team-id').value = teamId;
+            document.getElementById('player-manager-team-name').value = teamName;
+            document.getElementById('player-manager-title').innerText = `Kelola Pemain: ${teamName}`;
+            document.getElementById('player-input-number').value = '';
+            document.getElementById('player-input-name').value = '';
+            renderPlayerManagerList(team.players || []);
+            document.getElementById('player-manager-modal').classList.remove('hidden');
+        }
+
+        function closePlayerManager() {
+            document.getElementById('player-manager-modal').classList.add('hidden');
+        }
+
+        function renderPlayerManagerList(players) {
+            let container = document.getElementById('player-manager-list');
+            container.innerHTML = '';
+            document.getElementById('player-manager-count').innerText = players.length;
+            if (players.length === 0) {
+                container.innerHTML = '<div class="text-center text-slate-500 py-4 text-sm">Belum ada pemain</div>';
+                return;
+            }
+            players.forEach((p, idx) => {
+                let div = document.createElement('div');
+                div.className = 'bg-slate-950 p-2 rounded-lg border border-slate-700 flex items-center justify-between gap-2';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 flex-1 min-w-0">
+                        <span class="text-xs font-mono text-amber-400 w-10 text-right">#${p.number || ''}</span>
+                        <span class="text-white truncate">${p.name}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="editPlayerInManager(${idx})" class="bg-violet-600 hover:bg-violet-500 px-2 py-1 rounded text-[10px] font-bold">Edit</button>
+                        <button onclick="deletePlayerFromManager(${idx})" class="bg-rose-600 hover:bg-rose-500 px-2 py-1 rounded text-[10px] font-bold">Hapus</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addPlayerToTeam() {
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let number = document.getElementById('player-input-number').value.trim();
+            let name = document.getElementById('player-input-name').value.trim().toUpperCase();
+            if (!name) return alert('Nama pemain wajib diisi!');
+
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+
+            let players = team.players || [];
+            if (number && players.some(p => p.number === number)) {
+                return alert('Nomor punggung sudah digunakan!');
+            }
+            players.push({ number: number || '', name: name });
+            document.getElementById('player-input-number').value = '';
+            document.getElementById('player-input-name').value = '';
+            renderPlayerManagerList(players);
+        }
+
+        function editPlayerInManager(idx) {
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+            let players = team.players || [];
+            let player = players[idx];
+            if (!player) return;
+
+            let newNumber = prompt('Nomor punggung:', player.number || '');
+            if (newNumber === null) return;
+            let newName = prompt('Nama pemain:', player.name);
+            if (newName === null) return;
+            newName = newName.trim().toUpperCase();
+            if (!newName) return alert('Nama tidak boleh kosong!');
+
+            if (newNumber && players.some((p, i) => p.number === newNumber && i !== idx)) {
+                return alert('Nomor punggung sudah digunakan!');
+            }
+            player.number = newNumber || '';
+            player.name = newName;
+            renderPlayerManagerList(players);
+        }
+
+        function deletePlayerFromManager(idx) {
+            if (!confirm('Hapus pemain ini?')) return;
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+            let players = team.players || [];
+            players.splice(idx, 1);
+            renderPlayerManagerList(players);
+        }
+
+        async function savePlayerManager() {
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let players = [];
+            document.querySelectorAll('#player-manager-list > div').forEach(div => {
+                let number = div.querySelector('span.text-amber-400').innerText.replace('#', '');
+                let name = div.querySelector('span.truncate').innerText;
+                players.push({ number: number, name: name });
+            });
+
+            let { error } = await supabaseClient.from('teams').update({ players: players }).eq('id', teamId);
+            if (!error) {
+                await fetchTeams();
+                // Update extraObj if this team is currently selected
+                if (document.getElementById('home_name').value === document.getElementById('player-manager-team-name').value) {
+                    extraObj.home_players = players;
+                    document.getElementById('home_players_text').value = playersArrayToText(players);
+                    document.getElementById('home_player_count').innerText = players.length;
+                    updateCardPlayerOptions();
+                }
+                if (document.getElementById('away_name').value === document.getElementById('player-manager-team-name').value) {
+                    extraObj.away_players = players;
+                    document.getElementById('away_players_text').value = playersArrayToText(players);
+                    document.getElementById('away_player_count').innerText = players.length;
+                    updateCardPlayerOptions();
+                }
+                closePlayerManager();
+                alert('Pemain berhasil disimpan ke database!');
+            } else {
+                alert('Gagal menyimpan pemain: ' + error.message);
+            }
+        }
+
+        function bulkImportPlayers() {
+            let text = prompt('Masukkan daftar pemain (1 per baris, format: "10 - NAMA"):');
+            if (!text) return;
+            let lines = text.split('\n').map(s => s.trim()).filter(Boolean);
+            let teamId = document.getElementById('player-manager-team-id').value;
+            let team = dbTeams.find(t => t.id == teamId);
+            if (!team) return;
+            let players = team.players || [];
+            let added = 0;
+            lines.forEach(line => {
+                let idx = line.indexOf(' - ');
+                if (idx > 0) {
+                    let number = line.slice(0, idx).trim();
+                    let name = line.slice(idx + 3).trim().toUpperCase();
+                    if (!players.some(p => p.number === number && number !== '')) {
+                        players.push({ number, name });
+                        added++;
+                    }
+                } else {
+                    players.push({ number: '', name: line.toUpperCase() });
+                    added++;
+                }
+            });
+            renderPlayerManagerList(players);
+            alert(`${added} pemain ditambahkan dari import.`);
         }
 
         function filterMatchesByRound() {
@@ -1076,7 +2416,27 @@
         }
 
         function switchSport(sport, autoSave = true) {
+            const wasFutsal = stateData.sport_type === 'futsal';
             stateData.sport_type = sport;
+
+            if (wasFutsal && sport !== 'futsal') {
+                extraObj.home_foul = 0;
+                extraObj.away_foul = 0;
+                extraObj.home_to_used = false;
+                extraObj.away_to_used = false;
+                extraObj.timeout_active = false;
+                extraObj.timeout_started_at = null;
+                extraObj.red_penalty_active = false;
+                extraObj.red_started_at = null;
+                extraObj.red_penalty_timer_started_at = null;
+                extraObj.pen_active = false;
+                extraObj.home_pens = [];
+                extraObj.away_pens = [];
+                extraObj.card_event = null;
+                updateTimeoutUI();
+                updateRedPenaltyUI();
+            }
+
             document.querySelectorAll('.sport-btn').forEach(b => {
                 b.classList.remove('border-amber-500', 'bg-amber-500/10');
                 b.classList.add('border-slate-700', 'bg-slate-800/50');
@@ -1291,34 +2651,20 @@
         }
 
         function controlTimer(st) {
-            if (localTimerStatus === 'running') {
-                localTimerSeconds = computeSyncedTimerSeconds();
-            }
+            syncTimerState();
 
             localTimerStatus = st;
             if (st === 'running') {
                 stateData.timer_seconds = localTimerSeconds;
                 extraObj.timer_started_at = Date.now();
-                if (extraObj.red_penalty_active) {
-                    extraObj.red_penalty_seconds = liveRedRemain;
-                    extraObj.red_started_at = Date.now();
-                }
             } else if (st === 'paused') {
                 stateData.timer_seconds = localTimerSeconds;
                 extraObj.timer_started_at = null;
-                if (extraObj.red_penalty_active) {
-                    extraObj.red_penalty_seconds = liveRedRemain;
-                    extraObj.red_started_at = null;
-                }
             } else if (st === 'stopped') {
                 let mins = parseInt(document.getElementById('timer_mins').value) || 20;
                 localTimerSeconds = (localTimerMode === 'down') ? mins * 60 : 0;
                 stateData.timer_seconds = localTimerSeconds;
                 extraObj.timer_started_at = null;
-                if (extraObj.red_penalty_active) {
-                    extraObj.red_penalty_seconds = liveRedRemain;
-                    extraObj.red_started_at = null;
-                }
             }
             updateTimerUI();
             saveChanges();
@@ -1333,6 +2679,41 @@
 
         function triggerStinger() {
             stateData.stinger_trigger = Date.now();
+            saveChanges();
+        }
+
+        // ==================== NEW OVERLAY TRIGGERS ====================
+        function triggerGoalScorer() {
+            const name = document.getElementById('goal_scorer_name').value.trim();
+            const team = document.getElementById('goal_scorer_team').value.trim();
+            const minute = parseInt(document.getElementById('goal_scorer_minute').value) || 1;
+            const assist = document.getElementById('goal_scorer_assist').value.trim();
+            
+            if (!name || !team) return alert('Nama pencetak gol dan tim wajib diisi!');
+            
+            extraObj.goal_scorer_event = {
+                name: name,
+                team: team,
+                minute: minute,
+                assist: assist,
+                timestamp: Date.now()
+            };
+            saveChanges();
+        }
+
+        function triggerYellowCard() {
+            const side = document.getElementById('yellow_card_side').value;
+            const player = document.getElementById('yellow_card_player').value.trim();
+            const team = document.getElementById('yellow_card_team').value.trim();
+            
+            if (!player || !team) return alert('Nama pemain dan tim wajib diisi!');
+            
+            extraObj.yellow_card_event = {
+                side: side,
+                player: player,
+                team: team,
+                timestamp: Date.now()
+            };
             saveChanges();
         }
 
@@ -1403,8 +2784,18 @@
             alert("Hasil berhasil diarsipkan ke database!");
         }
 
+        function isInputFocused() {
+            const el = document.activeElement;
+            if (!el) return false;
+            const tag = el.tagName;
+            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return true;
+            if (el.isContentEditable) return true;
+            if (el.closest('input, textarea, select, [contenteditable]')) return true;
+            return false;
+        }
+
         document.addEventListener('keydown', (e) => {
-            if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+            if (isInputFocused()) return;
             if (e.code === 'Space') {
                 e.preventDefault();
                 controlTimer(localTimerStatus === 'running' ? 'paused' : 'running');
