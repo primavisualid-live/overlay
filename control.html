@@ -3068,6 +3068,9 @@ function triggerYellowCard() {
             
             minuteInput.value = 1;
             assistInput.value = '';
+            
+            // Increment the score
+            addGoal(side);
             saveChanges();
         }
 
