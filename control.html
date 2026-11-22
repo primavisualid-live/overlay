@@ -2646,6 +2646,7 @@ function loadSelectedMatch(idx) {
 
         function updateGoalAnimButtonUI() {
             let btn = document.getElementById('toggle-goal-anim-btn');
+            if (!btn) return;
             let isEnabled = (stateData.goal_animation_enabled === "1" || stateData.goal_animation_enabled === 1 || stateData.goal_animation_enabled === true);
             btn.innerText = isEnabled ? "AKTIF (ON)" : "MATI (OFF)";
             btn.className = isEnabled ? "px-3 py-1 rounded text-xs font-black bg-emerald-600 text-white" : "px-3 py-1 rounded text-xs font-black bg-rose-600 text-white";
