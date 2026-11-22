@@ -2653,8 +2653,9 @@ function loadSelectedMatch(idx) {
         }
 
         function switchSport(sport, autoSave = true) {
+            // Futsal only - sport buttons removed
             const wasFutsal = stateData.sport_type === 'futsal';
-            stateData.sport_type = sport;
+            stateData.sport_type = sport || 'futsal';
 
             if (wasFutsal && sport !== 'futsal') {
                 extraObj.home_foul = 0;
@@ -2673,13 +2674,8 @@ function loadSelectedMatch(idx) {
                 updateTimeoutUI();
                 updateRedPenaltyUI();
             }
-
-            document.querySelectorAll('.sport-btn').forEach(b => {
-                b.classList.remove('border-amber-500', 'bg-amber-500/10');
-                b.classList.add('border-slate-700', 'bg-slate-800/50');
-            });
-            document.getElementById('btn-sport-' + sport).classList.remove('border-slate-700', 'bg-slate-800/50');
-            document.getElementById('btn-sport-' + sport).classList.add('border-amber-500', 'bg-amber-500/10');
+            // Sport buttons removed (futsal only)
+        }
             document.getElementById('rules-box').innerHTML = SPORT_CFG[sport].rules;
 
             document.getElementById('timeout-control-box').style.display = (sport === 'futsal') ? 'flex' : 'none';
