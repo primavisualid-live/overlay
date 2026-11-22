@@ -1156,11 +1156,12 @@
             updateLivePreview();
 
             // Auto-load previously selected match if exists
-            if (extraObj.selected_match_id) {
-                const savedMatch = dbMatches.find(m => m.id === extraObj.selected_match_id);
+            // Check localStorage first (faster, works offline), then Supabase
+            let matchId = extraObj.selected_match_id || localStorage.getItem('selected_match_id');
+            if (matchId) {
+                const savedMatch = dbMatches.find(m => m.id === matchId);
                 if (savedMatch) {
-                    // Find index in filtered matches
-                    const idx = filteredMatchesCache.findIndex(m => m.id === extraObj.selected_match_id);
+                    const idx = filteredMatchesCache.findIndex(m => m.id === matchId);
                     if (idx >= 0) {
                         loadSelectedMatch(idx);
                     }
@@ -2358,9 +2359,11 @@ function loadSelectedMatch(idx) {
                 updateGoalScorerPlayers();
                 updateYellowCardPlayers();
 
-                // Save selected match ID for persistence
+                // Save selected match ID for persistence (both Supabase & localStorage)
                 extraObj.selected_match_id = match.id;
                 extraObj.selected_match_timestamp = Date.now();
+                localStorage.setItem('selected_match_id', match.id);
+                localStorage.setItem('selected_match_timestamp', Date.now());
                 saveChanges();
             }
         }
@@ -2369,6 +2372,8 @@ function loadSelectedMatch(idx) {
             if (!confirm('Hapus pilihan match yang tersimpan?')) return;
             extraObj.selected_match_id = null;
             extraObj.selected_match_timestamp = null;
+            localStorage.removeItem('selected_match_id');
+            localStorage.removeItem('selected_match_timestamp');
             document.getElementById('select_match_item').value = '';
             document.getElementById('home_name_display').innerText = '-';
             document.getElementById('away_name_display').innerText = '-';
