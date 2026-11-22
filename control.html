@@ -691,8 +691,13 @@
             <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400">⚽ Goal Scorer Overlay</h3>
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
-                    <input type="text" id="goal_scorer_name" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Pencetak Gol">
-                    <input type="text" id="goal_scorer_team" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Tim">
+                    <select id="goal_scorer_side" onchange="updateGoalScorerPlayers()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        <option value="home">Tim Home</option>
+                        <option value="away">Tim Away</option>
+                    </select>
+                    <select id="goal_scorer_player" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        <option value="">-- Pilih Pemain --</option>
+                    </select>
                     <input type="number" id="goal_scorer_minute" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Menit" min="1" max="120" value="1">
                     <input type="text" id="goal_scorer_assist" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Assist (opsional)">
                 </div>
@@ -703,12 +708,14 @@
             <div class="bg-slate-950/50 p-4 rounded-xl border border-slate-700 space-y-3">
                 <h3 class="text-xs font-bold uppercase tracking-wider text-yellow-400">🟨 Kartu Kuning Overlay (Di Bawah Skor)</h3>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <select id="yellow_card_side" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                    <select id="yellow_card_side" onchange="updateYellowCardPlayers()" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
                         <option value="home">Tim Home</option>
                         <option value="away">Tim Away</option>
                     </select>
-                    <input type="text" id="yellow_card_player" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Pemain (contoh: #10 NAMA)">
-                    <input type="text" id="yellow_card_team" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white" placeholder="Nama Tim">
+                    <select id="yellow_card_player" class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white">
+                        <option value="">-- Pilih Pemain --</option>
+                    </select>
+                    <span id="yellow_card_team_display" class="flex items-center bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-300">Tim: -</span>
                 </div>
                 <button onclick="triggerYellowCard()" class="bg-yellow-500 hover:bg-yellow-400 text-slate-950 w-full py-2 rounded-lg font-black text-xs">📺 Tampilkan Kartu Kuning</button>
             </div>
@@ -1025,6 +1032,8 @@
             }
 
             updateCardPlayerOptions();
+            updateGoalScorerPlayers();
+            updateYellowCardPlayers();
             saveChanges();
             alert(`Daftar pemain ${side.toUpperCase()} (${parsedList.length} pemain) berhasil disimpan!`);
         }
@@ -1040,6 +1049,8 @@
                 document.getElementById(side + '_player_count').innerText = foundTeam.players.length;
                 updateCardPlayerOptions();
             }
+            updateGoalScorerPlayers();
+            updateYellowCardPlayers();
         }
 
         function updateCardPlayerOptions() {
@@ -2324,6 +2335,8 @@
                 updateTimeoutUI();
                 updateRedPenaltyUI();
                 renderPanel(stateData.sport_type);
+                updateGoalScorerPlayers();
+                updateYellowCardPlayers();
                 saveChanges();
             }
         }
@@ -2683,17 +2696,52 @@
         }
 
         // ==================== NEW OVERLAY TRIGGERS ====================
+        function updateGoalScorerPlayers() {
+            const side = document.getElementById('goal_scorer_side').value;
+            const players = extraObj[side + '_players'] || [];
+            const select = document.getElementById('goal_scorer_player');
+            select.innerHTML = '<option value="">-- Pilih Pemain --</option>';
+            players.forEach(p => {
+                const label = p.number ? `#${p.number} ${p.name}` : p.name;
+                const opt = document.createElement('option');
+                opt.value = JSON.stringify({ name: p.name, team: p.team || '', number: p.number || '' });
+                opt.textContent = label;
+                select.appendChild(opt);
+            });
+        }
+
+        function updateYellowCardPlayers() {
+            const side = document.getElementById('yellow_card_side').value;
+            const players = extraObj[side + '_players'] || [];
+            const select = document.getElementById('yellow_card_player');
+            const teamDisplay = document.getElementById('yellow_card_team_display');
+            const teamName = side === 'home' ? (stateData.home_name || 'HOME') : (stateData.away_name || 'AWAY');
+            teamDisplay.innerText = `Tim: ${teamName}`;
+            
+            select.innerHTML = '<option value="">-- Pilih Pemain --</option>';
+            players.forEach(p => {
+                const label = p.number ? `#${p.number} ${p.name}` : p.name;
+                const opt = document.createElement('option');
+                opt.value = JSON.stringify({ name: p.name, team: teamName, number: p.number || '' });
+                opt.textContent = label;
+                select.appendChild(opt);
+            });
+        }
+
         function triggerGoalScorer() {
-            const name = document.getElementById('goal_scorer_name').value.trim();
-            const team = document.getElementById('goal_scorer_team').value.trim();
+            const playerData = document.getElementById('goal_scorer_player').value;
             const minute = parseInt(document.getElementById('goal_scorer_minute').value) || 1;
             const assist = document.getElementById('goal_scorer_assist').value.trim();
             
-            if (!name || !team) return alert('Nama pencetak gol dan tim wajib diisi!');
+            if (!playerData) return alert('Pilih pemain pencetak gol!');
+            
+            const player = JSON.parse(playerData);
+            const side = document.getElementById('goal_scorer_side').value;
+            const teamName = side === 'home' ? (stateData.home_name || 'HOME') : (stateData.away_name || 'AWAY');
             
             extraObj.goal_scorer_event = {
-                name: name,
-                team: team,
+                name: player.name,
+                team: teamName,
                 minute: minute,
                 assist: assist,
                 timestamp: Date.now()
@@ -2702,16 +2750,18 @@
         }
 
         function triggerYellowCard() {
-            const side = document.getElementById('yellow_card_side').value;
-            const player = document.getElementById('yellow_card_player').value.trim();
-            const team = document.getElementById('yellow_card_team').value.trim();
+            const playerData = document.getElementById('yellow_card_player').value;
             
-            if (!player || !team) return alert('Nama pemain dan tim wajib diisi!');
+            if (!playerData) return alert('Pilih pemain yang dapat kartu kuning!');
+            
+            const player = JSON.parse(playerData);
+            const side = document.getElementById('yellow_card_side').value;
+            const teamName = side === 'home' ? (stateData.home_name || 'HOME') : (stateData.away_name || 'AWAY');
             
             extraObj.yellow_card_event = {
                 side: side,
-                player: player,
-                team: team,
+                player: player.number ? `#${player.number} ${player.name}` : player.name,
+                team: teamName,
                 timestamp: Date.now()
             };
             saveChanges();
